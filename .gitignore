@@ -88,3 +88,7 @@ dist-ssr/
 *.json
 
 V4.json
+
+# Excepciones para archivos de configuración de Azure SWA
+!staticwebapp.config.json
+!public/staticwebapp.config.json
