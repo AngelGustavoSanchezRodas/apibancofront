@@ -6,19 +6,35 @@ function getAuthHeader() {
   return token ? { 'Authorization': `Bearer ${token}` } : {};
 }
 
+/** Normaliza respuestas de listado (Kardex, bitácora) cuando la API envuelve el arreglo en un objeto. */
+function asMovimientosList(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload == null || typeof payload !== 'object') return [];
+  const keys = ['data', 'items', 'movimientos', 'registros', 'result', 'kardex', 'bitacora'];
+  for (const k of keys) {
+    const v = payload[k];
+    if (Array.isArray(v)) return v;
+  }
+  return [];
+}
+
 // Auxiliar centralizado para realizar las peticiones HTTP
 async function request(path, options = {}) {
   const url = `${API_URL}${path}`;
-  
-  // Fusionar los headers por defecto, de autenticación y los personalizados
+  const method = (options.method || 'GET').toUpperCase();
+
+  // Solo Content-Type JSON cuando hay cuerpo (evita GET con body-type que algunos proxies/API rechazan)
   const headers = {
-    'Content-Type': 'application/json',
     ...getAuthHeader(),
     ...options.headers
   };
+  if (options.body != null && !headers['Content-Type'] && !headers['content-type']) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   const config = {
     ...options,
+    method,
     headers
   };
 
@@ -187,7 +203,8 @@ export const BancoAPI = {
     if (hasta) params.push(`hasta=${encodeURIComponent(hasta)}`);
     if (params.length > 0) query = `?${params.join('&')}`;
 
-    return await request(`/api/Bitacora/kardex/${idCuenta}${query}`);
+    const raw = await request(`/api/Bitacora/kardex/${idCuenta}${query}`);
+    return asMovimientosList(raw);
   },
 
   async obtenerIntegraciones() {

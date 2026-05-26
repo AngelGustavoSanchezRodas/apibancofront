@@ -7,21 +7,22 @@ export function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  
-  // Iconos SVG según el tipo de notificación
-  let iconSvg = '';
+
+  const iconWrap = document.createElement('span');
   if (type === 'success') {
-    iconSvg = `<svg class="w-5 h-5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+    iconWrap.innerHTML = `<svg class="w-5 h-5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
   } else if (type === 'error') {
-    iconSvg = `<svg class="w-5 h-5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+    iconWrap.innerHTML = `<svg class="w-5 h-5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
   } else {
-    iconSvg = `<svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+    iconWrap.innerHTML = `<svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
   }
 
-  toast.innerHTML = `
-    <span>${iconSvg}</span>
-    <div class="flex-1">${message}</div>
-  `;
+  const text = document.createElement('div');
+  text.className = 'flex-1';
+  text.textContent = String(message ?? '');
+
+  toast.appendChild(iconWrap);
+  toast.appendChild(text);
 
   container.appendChild(toast);
 
@@ -55,7 +56,6 @@ export function hideLoginScreen() {
 // --- NAV TABS ROUTING ---
 export function setupTabs(currentRole) {
   const tabs = document.querySelectorAll('.tab-content');
-  const navButtons = document.querySelectorAll('.nav-btn');
 
   // Ocultar todas las pestañas por defecto
   tabs.forEach(tab => tab.classList.add('hidden'));
@@ -132,7 +132,9 @@ export function renderKardexUI(movimientos) {
   const tbody = document.getElementById('movimientos-tabla-body');
   if (!tbody) return;
 
-  if (!movimientos || movimientos.length === 0) {
+  const lista = Array.isArray(movimientos) ? movimientos : [];
+
+  if (lista.length === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="5" class="p-6 text-center text-slate-400 italic">Esta cuenta no posee registros de transacciones previos en el Kardex.</td>
@@ -141,7 +143,7 @@ export function renderKardexUI(movimientos) {
     return;
   }
 
-  tbody.innerHTML = movimientos.map(mov => {
+  tbody.innerHTML = lista.map(mov => {
     const isCredito = mov.tipoOperacion === 'CREDITO' || mov.tipo === 'CREDITO' || mov.monto > 0; // Dependiendo de la convención de la API
     const tipoLabel = isCredito ? 'DEPÓSITO (CREDITO)' : 'RETIRO (DEBITO)';
     const colorClass = isCredito ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold';
@@ -167,14 +169,16 @@ export function renderBitacoraAdminUI(logs) {
   const container = document.getElementById('bitacora-admin-lista');
   if (!container) return;
 
-  if (!logs || logs.length === 0) {
+  const lista = Array.isArray(logs) ? logs : [];
+
+  if (lista.length === 0) {
     container.innerHTML = `
       <p class="text-gray-400 italic text-center py-8">No se encontraron movimientos registrados en la bitácora de auditoría para esta cuenta.</p>
     `;
     return;
   }
 
-  container.innerHTML = logs.map(log => {
+  container.innerHTML = lista.map(log => {
     const isCredito = log.tipoOperacion === 'CREDITO' || log.tipo === 'CREDITO' || log.monto > 0;
     const badgeColor = isCredito ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200';
     const borderClass = isCredito ? 'credito' : 'debito';
@@ -194,7 +198,7 @@ export function renderBitacoraAdminUI(logs) {
           <span class="text-xs text-slate-400">${new Date(fecha).toLocaleString('es-GT')}</span>
         </div>
         <div class="text-right">
-          <p class="text-lg font-black font-mono text-slate-800">Q ${parseFloat(log.monto).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+          <p class="text-lg font-black font-mono text-slate-800">Q ${Number.parseFloat(log.monto ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
           <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Estado Core: Aprobado</span>
         </div>
       </div>
@@ -202,13 +206,85 @@ export function renderBitacoraAdminUI(logs) {
   }).join('');
 }
 
+function integrationItemHealthy(item) {
+  if (item == null || typeof item !== 'object') return false;
+  if (item.healthy === true || item.activo === true || item.enLinea === true || item.ok === true) return true;
+  const s = String(item.estado ?? item.status ?? '').toLowerCase();
+  return s === 'healthy' || s === 'saludable' || s === 'ok' || s === 'enlinea' || s === 'online';
+}
+
 // Renderizar estado de diagnóstico de integraciones
-export function renderDiagnosticsUI(statusData) {
+/**
+ * @param {object|null|undefined} statusData Respuesta de `/api/diagnostico/integraciones`
+ * @param {{ fetchFailed?: boolean }} [opts] `fetchFailed`: error de red (no equivale a servicio caído)
+ */
+export function renderDiagnosticsUI(statusData, opts = {}) {
   const container = document.getElementById('diagnostico-status-integracion');
   if (!container) return;
 
-  const isHealthy = statusData && (statusData.estado || statusData.status === 'Healthy' || statusData.healthy);
-  
+  if (opts.fetchFailed) {
+    container.innerHTML = `
+      <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+      Sin verificar (red o CORS)
+    `;
+    container.className = 'inline-flex items-center gap-2 font-semibold text-amber-700';
+    return;
+  }
+
+  if (statusData == null) {
+    container.innerHTML = `
+      <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+      Sin datos del core
+    `;
+    container.className = 'inline-flex items-center gap-2 font-semibold text-slate-600';
+    return;
+  }
+
+  let isHealthy = false;
+
+  if (Array.isArray(statusData)) {
+    if (statusData.length === 0) {
+      container.innerHTML = `
+      <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+      Sin detalle (lista vacía)
+    `;
+      container.className = 'inline-flex items-center gap-2 font-semibold text-slate-600';
+      return;
+    }
+    isHealthy = statusData.every(integrationItemHealthy);
+  } else if (typeof statusData === 'object') {
+    if (integrationItemHealthy(statusData)) {
+      isHealthy = true;
+    } else if (Array.isArray(statusData.servicios)) {
+      if (statusData.servicios.length === 0) {
+        container.innerHTML = `
+      <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+      Sin detalle (lista vacía)
+    `;
+        container.className = 'inline-flex items-center gap-2 font-semibold text-slate-600';
+        return;
+      }
+      isHealthy = statusData.servicios.every(integrationItemHealthy);
+    } else if (Array.isArray(statusData.integraciones)) {
+      if (statusData.integraciones.length === 0) {
+        container.innerHTML = `
+      <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+      Sin detalle (lista vacía)
+    `;
+        container.className = 'inline-flex items-center gap-2 font-semibold text-slate-600';
+        return;
+      }
+      isHealthy = statusData.integraciones.every(integrationItemHealthy);
+    } else {
+      const estado = String(statusData.estado ?? statusData.status ?? '').toLowerCase();
+      isHealthy =
+        estado === 'healthy' ||
+        estado === 'saludable' ||
+        statusData.status === 'Healthy' ||
+        statusData.healthy === true;
+    }
+  }
+
   if (isHealthy) {
     container.innerHTML = `
       <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
@@ -218,7 +294,7 @@ export function renderDiagnosticsUI(statusData) {
   } else {
     container.innerHTML = `
       <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-      Falla de Enlace
+      Falla de enlace o estado no saludable
     `;
     container.className = 'inline-flex items-center gap-2 font-semibold text-rose-700';
   }

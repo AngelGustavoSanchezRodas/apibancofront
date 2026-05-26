@@ -20,6 +20,11 @@ let state = {
   activeAccount: null
 };
 
+function setHeaderUserBadge(text) {
+  const el = document.getElementById('header-user-badge');
+  if (el) el.textContent = text;
+}
+
 // --- COMPROBACIÓN DE ADULTERACIÓN DE SESIÓN (ANTI-TAMPERING) ---
 function checkSessionIntegrity() {
   const localCred = localStorage.getItem('credencial');
@@ -48,7 +53,7 @@ function forzarLogout(mensaje) {
   state.role = 'usuario';
   state.activeAccount = null;
 
-  document.getElementById('header-user-badge').textContent = 'Visitante';
+  setHeaderUserBadge('Visitante');
   UI.showLoginScreen();
   window.location.hash = '#/login';
   
@@ -142,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     UI.hideLoginScreen();
     UI.setupTabs(state.role);
-    document.getElementById('header-user-badge').textContent = state.role === 'admin' ? 'Administrador Core' : `Usuario: ${savedUser}`;
+      setHeaderUserBadge(state.role === 'admin' ? 'Administrador Core' : `Usuario: ${savedUser}`);
     
     if (state.role === 'admin') {
       cargarDiagnosticoCore();
@@ -180,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       UI.hideLoginScreen();
       UI.setupTabs(state.role);
-      document.getElementById('header-user-badge').textContent = state.role === 'admin' ? 'Administrador Core' : `Usuario: ${credencial}`;
+      setHeaderUserBadge(state.role === 'admin' ? 'Administrador Core' : `Usuario: ${credencial}`);
       
       UI.showToast(`Bienvenido al sistema transaccional, ${credencial}`, 'success');
 
@@ -542,6 +547,6 @@ async function cargarDiagnosticoCore() {
     const status = await BancoAPI.obtenerIntegraciones();
     UI.renderDiagnosticsUI(status);
   } catch (error) {
-    UI.renderDiagnosticsUI(null);
+    UI.renderDiagnosticsUI(null, { fetchFailed: true });
   }
 }
