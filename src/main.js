@@ -88,6 +88,9 @@ function setHeaderUserBadge(text) {
 }
 
 function getBitacoraAccountId() {
+  if (localStorage.getItem(BITACORA_ACCOUNT_STORAGE_KEY)) {
+    localStorage.removeItem(BITACORA_ACCOUNT_STORAGE_KEY);
+  }
   if (ADMIN_DEFAULT_ACCOUNT_ID) return String(ADMIN_DEFAULT_ACCOUNT_ID);
   return '';
 }
@@ -608,10 +611,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checkSessionIntegrity()) return;
 
     const idCuenta = document.getElementById('bitacora-cuenta-id').value;
-
-    if (idCuenta) {
-      localStorage.setItem(BITACORA_ACCOUNT_STORAGE_KEY, idCuenta);
-    }
 
     await loadBitacoraAdmin(idCuenta);
   });
