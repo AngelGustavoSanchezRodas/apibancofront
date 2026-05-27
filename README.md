@@ -22,6 +22,10 @@ La app abre en el puerto configurado en `vite.config.js` (por defecto `http://lo
 ### Variables opcionales
 
 - `VITE_ADMIN_ALIASES`: lista separada por comas para resolver rol admin cuando la API no devuelve rol.
+- `VITE_LOGIN_PATH`: ruta de login si tu backend usa un endpoint distinto.
+- `VITE_LOGIN_CREDENTIAL_FIELD`: nombre del campo para la credencial (ej. `usuario`).
+- `VITE_LOGIN_PASSWORD_FIELD`: nombre del campo para la contraseña (ej. `clave`).
+- `VITE_API_WITH_CREDENTIALS`: si es `true`, envia cookies en `fetch`.
 - `VITE_SHOW_DEMO_CREDS`: si es `true`, muestra credenciales de demostracion en el login.
 - `VITE_DEMO_ADMIN_USER`, `VITE_DEMO_ADMIN_PASS`, `VITE_DEMO_USER`, `VITE_DEMO_USER_PASS`: valores de demo visibles en el login.
 

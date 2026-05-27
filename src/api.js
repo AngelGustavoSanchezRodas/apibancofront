@@ -1,4 +1,10 @@
-import { API_URL } from './config.js';
+import {
+  API_URL,
+  AUTH_LOGIN_PATH,
+  AUTH_LOGIN_CREDENTIAL_FIELD,
+  AUTH_LOGIN_PASSWORD_FIELD,
+  API_WITH_CREDENTIALS
+} from './config.js';
 
 const ROLE_STORAGE_KEY = 'role';
 
@@ -84,6 +90,9 @@ async function request(path, options = {}) {
     method,
     headers
   };
+  if (API_WITH_CREDENTIALS && config.credentials == null) {
+    config.credentials = 'include';
+  }
 
   try {
     const response = await fetch(url, config);
@@ -119,9 +128,14 @@ async function request(path, options = {}) {
 export const BancoAPI = {
   // --- AUTH ---
   async login(credencial, password) {
-    const response = await request('/api/Auth/login', {
+    const payload = {
+      [AUTH_LOGIN_CREDENTIAL_FIELD]: credencial,
+      [AUTH_LOGIN_PASSWORD_FIELD]: password
+    };
+
+    const response = await request(AUTH_LOGIN_PATH, {
       method: 'POST',
-      body: JSON.stringify({ credencial, password })
+      body: JSON.stringify(payload)
     });
     
     // Si el login fue exitoso y devolvió datos (por ejemplo, un token)
