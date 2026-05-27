@@ -182,24 +182,25 @@ export function renderBitacoraAdminUI(logs) {
     const isCredito = log.tipoOperacion === 'CREDITO' || log.tipo === 'CREDITO' || log.monto > 0;
     const badgeColor = isCredito ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200';
     const borderClass = isCredito ? 'credito' : 'debito';
-    const tipo = isCredito ? 'CREDITO / INGRESO' : 'DEBITO / EGRESO';
+    const tipo = isCredito ? 'INGRESO' : 'EGRESO';
     const fecha = log.fecha || log.fechaOperacion || new Date().toISOString();
-    const ref = log.referencia || log.descripcion || 'Sin descripción de auditoría';
+    const ref = log.referencia || log.descripcion || log.concepto || 'Sin descripcion';
     const idTrans = log.idBitacora || log.id || '--';
+    const monto = Number.parseFloat(log.monto ?? 0);
+    const montoFormatted = `Q ${Math.abs(monto).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     return `
       <div class="bitacora-entry ${borderClass} p-4 rounded-xl border flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
         <div class="space-y-1">
           <div class="flex items-center gap-2">
-            <span class="font-mono text-xs font-bold text-slate-500">ID Log: #${idTrans}</span>
+            <span class="font-mono text-xs font-bold text-slate-500">ID: #${idTrans}</span>
             <span class="border text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${badgeColor}">${tipo}</span>
           </div>
           <p class="text-sm font-semibold text-slate-800">${ref}</p>
           <span class="text-xs text-slate-400">${new Date(fecha).toLocaleString('es-GT')}</span>
         </div>
         <div class="text-right">
-          <p class="text-lg font-black font-mono text-slate-800">Q ${Number.parseFloat(log.monto ?? 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-          <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Estado Core: Aprobado</span>
+          <p class="text-lg font-black font-mono text-slate-800">${montoFormatted}</p>
         </div>
       </div>
     `;
