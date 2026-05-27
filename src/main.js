@@ -88,8 +88,6 @@ function setHeaderUserBadge(text) {
 }
 
 function getBitacoraAccountId() {
-  const stored = localStorage.getItem(BITACORA_ACCOUNT_STORAGE_KEY);
-  if (stored) return stored;
   if (ADMIN_DEFAULT_ACCOUNT_ID) return String(ADMIN_DEFAULT_ACCOUNT_ID);
   return '';
 }
