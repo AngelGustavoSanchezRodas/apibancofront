@@ -1,5 +1,52 @@
 import { API_URL } from './config.js';
 
+const ROLE_STORAGE_KEY = 'role';
+
+function normalizeRole(rawRole) {
+  if (rawRole == null) return null;
+  const role = String(rawRole).trim().toLowerCase();
+  if (!role) return null;
+  if (role === 'admin' || role === 'administrador' || role === 'administrator') return 'admin';
+  if (role === 'usuario' || role === 'user' || role === 'cliente') return 'usuario';
+  return null;
+}
+
+function extractRoleFromLoginResponse(payload) {
+  if (payload == null || typeof payload !== 'object') return null;
+
+  const direct = [
+    payload.role,
+    payload.rol,
+    payload.perfil,
+    payload.tipoUsuario,
+    payload.tipo,
+    payload.permiso,
+    payload.privilegio
+  ];
+  for (const candidate of direct) {
+    const normalized = normalizeRole(candidate);
+    if (normalized) return normalized;
+  }
+
+  const nestedCandidates = [
+    payload.user?.role,
+    payload.user?.rol,
+    payload.usuario?.role,
+    payload.usuario?.rol,
+    payload.claims?.role,
+    payload.claims?.rol
+  ];
+  for (const candidate of nestedCandidates) {
+    const normalized = normalizeRole(candidate);
+    if (normalized) return normalized;
+  }
+
+  if (payload.isAdmin === true || payload.esAdmin === true) return 'admin';
+  if (payload.isAdmin === false || payload.esAdmin === false) return 'usuario';
+
+  return null;
+}
+
 // Auxiliar para obtener el token almacenado
 function getAuthHeader() {
   const token = localStorage.getItem('token');
@@ -83,6 +130,13 @@ export const BancoAPI = {
     }
     // Guardar también la credencial para saber quién inició sesión
     localStorage.setItem('credencial', credencial);
+
+    // Persistir el rol de forma segura si la API lo devuelve
+    localStorage.removeItem(ROLE_STORAGE_KEY);
+    const normalizedRole = extractRoleFromLoginResponse(response);
+    if (normalizedRole) {
+      localStorage.setItem(ROLE_STORAGE_KEY, normalizedRole);
+    }
     
     return response;
   },
@@ -90,6 +144,7 @@ export const BancoAPI = {
   logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('credencial');
+    localStorage.removeItem(ROLE_STORAGE_KEY);
   },
 
   // --- CUENTAHABIENTES ---

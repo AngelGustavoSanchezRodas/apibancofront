@@ -13,6 +13,66 @@ const ROUTES = {
   'bitacora': { role: 'admin' }
 };
 
+const ROLE_STORAGE_KEY = 'role';
+const ADMIN_ALIAS_ENV = import.meta.env.VITE_ADMIN_ALIASES || import.meta.env.VITE_ADMIN_ALIAS || '';
+const ADMIN_ALIASES = ADMIN_ALIAS_ENV
+  .split(',')
+  .map((alias) => alias.trim())
+  .filter(Boolean);
+const FALLBACK_ADMIN_ALIASES = ADMIN_ALIASES.length > 0 ? ADMIN_ALIASES : ['admin'];
+
+function normalizeRole(rawRole) {
+  if (rawRole == null) return null;
+  const role = String(rawRole).trim().toLowerCase();
+  if (!role) return null;
+  if (role === 'admin' || role === 'administrador' || role === 'administrator') return 'admin';
+  if (role === 'usuario' || role === 'user' || role === 'cliente') return 'usuario';
+  return null;
+}
+
+function resolveRoleFromCredencial(credencial) {
+  if (!credencial) return 'usuario';
+  const normalized = String(credencial).trim().toLowerCase();
+  const isAdmin = FALLBACK_ADMIN_ALIASES.some((alias) => alias.toLowerCase() === normalized);
+  return isAdmin ? 'admin' : 'usuario';
+}
+
+function resolveRoleFromStorage(credencial) {
+  const storedRole = normalizeRole(localStorage.getItem(ROLE_STORAGE_KEY));
+  return storedRole || resolveRoleFromCredencial(credencial);
+}
+
+function formatDemoCredential(user, pass) {
+  if (!user && !pass) return 'No configuradas';
+  const safeUser = user || 'usuario';
+  const safePass = pass || '******';
+  return `${safeUser} / ${safePass}`;
+}
+
+function setupDemoCredentials() {
+  const container = document.getElementById('demo-credentials');
+  if (!container) return;
+
+  const showDemo = String(import.meta.env.VITE_SHOW_DEMO_CREDS || '').toLowerCase() === 'true';
+  if (!showDemo) {
+    container.classList.add('hidden');
+    return;
+  }
+
+  const adminUser = import.meta.env.VITE_DEMO_ADMIN_USER || '';
+  const adminPass = import.meta.env.VITE_DEMO_ADMIN_PASS || '';
+  const userUser = import.meta.env.VITE_DEMO_USER || '';
+  const userPass = import.meta.env.VITE_DEMO_USER_PASS || '';
+
+  container.classList.remove('hidden');
+
+  const adminSlot = document.getElementById('demo-admin-cred');
+  if (adminSlot) adminSlot.textContent = formatDemoCredential(adminUser, adminPass);
+
+  const userSlot = document.getElementById('demo-user-cred');
+  if (userSlot) userSlot.textContent = formatDemoCredential(userUser, userPass);
+}
+
 // --- CONFIGURACIÓN DE ESTADO GLOBAL SEGURO EN MEMORIA ---
 let state = {
   role: 'usuario', 
@@ -28,6 +88,7 @@ function setHeaderUserBadge(text) {
 // --- COMPROBACIÓN DE ADULTERACIÓN DE SESIÓN (ANTI-TAMPERING) ---
 function checkSessionIntegrity() {
   const localCred = localStorage.getItem('credencial');
+  const localRole = normalizeRole(localStorage.getItem(ROLE_STORAGE_KEY));
   
   // Si en memoria figura logueado pero en localStorage la credencial cambió o se borró
   if (state.activeUser && localCred !== state.activeUser) {
@@ -35,9 +96,16 @@ function checkSessionIntegrity() {
     forzarLogout('¡Alerta de Seguridad! Se ha detectado una modificación no autorizada de la sesión. Sesión cerrada.');
     return true;
   }
+
+  // Si el rol fue alterado en localStorage, fuerza cierre de sesión
+  if (state.activeUser && localRole && localRole !== state.role) {
+    console.warn('¡Adulteración de rol detectada!');
+    forzarLogout('¡Alerta de Seguridad! Se ha detectado una modificación no autorizada del rol. Sesión cerrada.');
+    return true;
+  }
   
   // Si en memoria figura deslogueado pero en localStorage agregaron credenciales fraudulentas
-  if (!state.activeUser && localCred) {
+  if (!state.activeUser && (localCred || localRole)) {
     console.warn('¡Intento de sesión fraudulenta detectado!');
     forzarLogout(null);
     return true;
@@ -129,6 +197,7 @@ function handleRouting() {
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
+  setupDemoCredentials();
   UI.setupLiveComision();
   
   // Configurar listeners de clicks en los botones de navegación
@@ -143,7 +212,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedUser = localStorage.getItem('credencial');
   if (savedUser) {
     state.activeUser = savedUser;
-    state.role = savedUser === 'admin' ? 'admin' : 'usuario';
+    state.role = resolveRoleFromStorage(savedUser);
     
     UI.hideLoginScreen();
     UI.setupTabs(state.role);
@@ -181,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Sincronizar estado seguro en memoria
       state.activeUser = credencial;
-      state.role = credencial === 'admin' ? 'admin' : 'usuario';
+      state.role = resolveRoleFromStorage(credencial);
 
       UI.hideLoginScreen();
       UI.setupTabs(state.role);

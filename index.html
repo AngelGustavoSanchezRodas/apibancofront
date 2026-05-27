@@ -38,7 +38,7 @@
             <form id="form-login" class="space-y-5">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5" for="login-credencial">Usuario / Credencial</label>
-                    <input type="text" id="login-credencial" placeholder="Ej. admin o usuario123" class="w-full border-2 p-3 rounded-lg outline-none font-medium focus:border-blue-700 focus:ring-4 focus:ring-blue-100 transition" required>
+                    <input type="text" id="login-credencial" placeholder="Ej. usuario.demo" class="w-full border-2 p-3 rounded-lg outline-none font-medium focus:border-blue-700 focus:ring-4 focus:ring-blue-100 transition" required>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5" for="login-password">Contraseña</label>
@@ -50,11 +50,11 @@
                 </button>
             </form>
 
-            <div class="mt-6 pt-6 border-t border-slate-100 text-center">
-                <p class="text-xs text-slate-400">Credenciales de Demostración:</p>
+            <div id="demo-credentials" class="mt-6 pt-6 border-t border-slate-100 text-center hidden">
+                <p class="text-xs text-slate-400">Credenciales de demostracion:</p>
                 <div class="mt-2 flex justify-center gap-4 text-xs font-mono text-slate-600">
-                    <div><span class="font-bold text-blue-800">Admin:</span> admin / admin123</div>
-                    <div><span class="font-bold text-emerald-800">User:</span> user1 / user123</div>
+                    <div><span class="font-bold text-blue-800">Admin:</span> <span id="demo-admin-cred">No configuradas</span></div>
+                    <div><span class="font-bold text-emerald-800">User:</span> <span id="demo-user-cred">No configuradas</span></div>
                 </div>
             </div>
         </div>

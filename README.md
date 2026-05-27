@@ -19,6 +19,14 @@ npm run dev
 
 La app abre en el puerto configurado en `vite.config.js` (por defecto `http://localhost:3000`).
 
+### Variables opcionales
+
+- `VITE_ADMIN_ALIASES`: lista separada por comas para resolver rol admin cuando la API no devuelve rol.
+- `VITE_SHOW_DEMO_CREDS`: si es `true`, muestra credenciales de demostracion en el login.
+- `VITE_DEMO_ADMIN_USER`, `VITE_DEMO_ADMIN_PASS`, `VITE_DEMO_USER`, `VITE_DEMO_USER_PASS`: valores de demo visibles en el login.
+
+Nota: estas variables son solo para entornos de demostracion; no uses credenciales reales en el frontend.
+
 ## Scripts
 
 | Script | Descripción |
