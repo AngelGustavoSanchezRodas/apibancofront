@@ -26,6 +26,7 @@ La app abre en el puerto configurado en `vite.config.js` (por defecto `http://lo
 - `VITE_LOGIN_CREDENTIAL_FIELD`: nombre del campo para la credencial (ej. `usuario`).
 - `VITE_LOGIN_PASSWORD_FIELD`: nombre del campo para la contraseña (ej. `clave`).
 - `VITE_API_WITH_CREDENTIALS`: si es `true`, envia cookies en `fetch`.
+- `VITE_ADMIN_DEFAULT_ACCOUNT_ID`: cuenta por defecto para cargar la bitacora de admin automaticamente.
 - `VITE_SHOW_DEMO_CREDS`: si es `true`, muestra credenciales de demostracion en el login.
 - `VITE_DEMO_ADMIN_USER`, `VITE_DEMO_ADMIN_PASS`, `VITE_DEMO_USER`, `VITE_DEMO_USER_PASS`: valores de demo visibles en el login.
 

@@ -1,5 +1,6 @@
 import { BancoAPI } from './api.js';
 import * as UI from './ui.js';
+import { ADMIN_DEFAULT_ACCOUNT_ID } from './config.js';
 
 // --- MAPEO DE RUTAS Y ROLES REQUERIDOS ---
 const ROUTES = {
@@ -14,6 +15,7 @@ const ROUTES = {
 };
 
 const ROLE_STORAGE_KEY = 'role';
+const BITACORA_ACCOUNT_STORAGE_KEY = 'bitacoraAccountId';
 const ADMIN_ALIAS_ENV = import.meta.env.VITE_ADMIN_ALIASES || import.meta.env.VITE_ADMIN_ALIAS || '';
 const ADMIN_ALIASES = ADMIN_ALIAS_ENV
   .split(',')
@@ -83,6 +85,30 @@ let state = {
 function setHeaderUserBadge(text) {
   const el = document.getElementById('header-user-badge');
   if (el) el.textContent = text;
+}
+
+function getBitacoraAccountId() {
+  const stored = localStorage.getItem(BITACORA_ACCOUNT_STORAGE_KEY);
+  if (stored) return stored;
+  if (ADMIN_DEFAULT_ACCOUNT_ID) return String(ADMIN_DEFAULT_ACCOUNT_ID);
+  return '';
+}
+
+async function loadBitacoraAdmin(idCuenta) {
+  if (!idCuenta) {
+    UI.showToast('No hay cuenta configurada para cargar la bitacora.', 'error');
+    return;
+  }
+
+  UI.showLoader();
+  try {
+    const logs = await BancoAPI.obtenerKardex(idCuenta);
+    UI.renderBitacoraAdminUI(logs);
+  } catch (error) {
+    UI.showToast(`Error al obtener bitacora de cuenta: ${error.message}`, 'error');
+  } finally {
+    UI.hideLoader();
+  }
 }
 
 // --- COMPROBACIÓN DE ADULTERACIÓN DE SESIÓN (ANTI-TAMPERING) ---
@@ -193,6 +219,17 @@ function handleRouting() {
   // Si todo es válido, mostrar la pestaña de forma segura
   UI.hideLoginScreen();
   UI.switchTab(route);
+
+  if (route === 'bitacora' && state.role === 'admin') {
+    const input = document.getElementById('bitacora-cuenta-id');
+    const idCuenta = getBitacoraAccountId();
+    if (input && idCuenta) {
+      input.value = idCuenta;
+    }
+    if (idCuenta) {
+      loadBitacoraAdmin(idCuenta);
+    }
+  }
 }
 
 // --- INICIALIZACIÓN ---
@@ -574,16 +611,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const idCuenta = document.getElementById('bitacora-cuenta-id').value;
 
-    UI.showLoader();
-    try {
-      const logs = await BancoAPI.obtenerKardex(idCuenta);
-      UI.renderBitacoraAdminUI(logs);
-      UI.showToast(`Bitácora de cuenta #${idCuenta} cargada.`, 'success');
-    } catch (error) {
-      UI.showToast(`Error al obtener bitácora de cuenta: ${error.message}`, 'error');
-    } finally {
-      UI.hideLoader();
+    if (idCuenta) {
+      localStorage.setItem(BITACORA_ACCOUNT_STORAGE_KEY, idCuenta);
     }
+
+    await loadBitacoraAdmin(idCuenta);
   });
 
   // Actualizar Diagnóstico de Integraciones
