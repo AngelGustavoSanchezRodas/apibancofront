@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
-import { Wallet } from 'lucide-react';
+import { Wallet, Activity } from 'lucide-react';
 
 export default function DashboardView() {
   const { userId } = useAuthStore();
@@ -13,11 +13,7 @@ export default function DashboardView() {
     const fetchSaldo = async () => {
       try {
         setLoading(true);
-        // Assuming userId correlates to idCuenta as per architecture plan
         const response = await api.get(`/api/Operaciones/saldo/${userId}`);
-        // Assuming the response structure returns { saldo: 123.45 } or similar directly or nested.
-        // E.g. { data: 500.5 } or { data: { saldo: 500.5 } }. 
-        // We will default to response.data if it's a primitive, or response.data.saldo
         setSaldo(typeof response.data === 'number' ? response.data : response.data?.saldo || 0);
       } catch (err) {
         setError('No se pudo cargar el saldo actual.');
@@ -32,33 +28,46 @@ export default function DashboardView() {
   }, [userId]);
 
   return (
-    <div className="max-w-3xl">
-      <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-6">Resumen de Cuenta</h2>
+    <div className="max-w-4xl">
+      <h2 className="text-3xl font-bold font-serif text-slate-900 tracking-wide mb-8">Resumen de Cuenta</h2>
       
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-        <div className="flex items-center gap-3 text-slate-500 mb-6">
-          <Wallet size={20} />
-          <h3 className="font-medium text-sm uppercase tracking-wider">Saldo Disponible</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Tarjeta de Saldo */}
+        <div className="bg-white/90 backdrop-blur-md shadow-strong border border-white/20 rounded-2xl p-6">
+          <div className="flex items-center gap-3 text-slate-500 mb-6">
+            <Wallet size={24} className="text-blue-900" />
+            <h3 className="font-bold text-sm uppercase tracking-wider text-slate-700">Saldo Disponible</h3>
+          </div>
+
+          {loading ? (
+            <div className="animate-pulse flex flex-col gap-4">
+              <div className="h-14 bg-gray-200 rounded-lg w-2/3"></div>
+              <div className="h-5 bg-gray-200 rounded-lg w-1/3 mt-2"></div>
+            </div>
+          ) : error ? (
+            <div className="text-red-600 font-medium bg-red-50/80 p-4 rounded-lg border border-red-100">
+              {error}
+            </div>
+          ) : (
+            <div>
+              <div className="text-5xl font-black text-slate-900 tracking-tighter">
+                Q {Number(saldo).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              <p className="text-sm text-slate-500 mt-3 font-medium">Cuenta activa vinculada a tu perfil corporativo</p>
+            </div>
+          )}
         </div>
 
-        {loading ? (
-          // Skeleton Loader
-          <div className="animate-pulse flex flex-col gap-4">
-            <div className="h-12 bg-slate-200 rounded w-1/2"></div>
-            <div className="h-4 bg-slate-100 rounded w-1/4 mt-2"></div>
+        {/* Placeholder para Últimos Movimientos si se desea */}
+        <div className="bg-white/90 backdrop-blur-md shadow-strong border border-white/20 rounded-2xl p-6">
+          <div className="flex items-center gap-3 text-slate-500 mb-6">
+            <Activity size={24} className="text-blue-900" />
+            <h3 className="font-bold text-sm uppercase tracking-wider text-slate-700">Últimos Movimientos</h3>
           </div>
-        ) : error ? (
-          <div className="text-red-600 font-medium bg-red-50 p-4 rounded-lg border border-red-100">
-            {error}
+          <div className="flex flex-col items-center justify-center h-24 text-slate-400 text-sm">
+            Historial de transacciones se reflejará aquí
           </div>
-        ) : (
-          <div>
-            <div className="text-5xl font-black text-slate-900 tracking-tighter">
-              Q {Number(saldo).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </div>
-            <p className="text-sm text-slate-500 mt-2 font-medium">Cuenta activa vinculada a tu perfil</p>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );

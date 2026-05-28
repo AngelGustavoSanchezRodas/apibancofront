@@ -24,7 +24,7 @@ export default function TransferView() {
         idCuentaOrigen: parseInt(userId, 10),
         idCuentaDestino: parseInt(destino, 10),
         monto: parseFloat(monto),
-        descripcion: descripcion || 'Transferencia desde portal web'
+        descripcion: descripcion || 'Transferencia web'
       });
       
       setSuccess(true);
@@ -41,13 +41,13 @@ export default function TransferView() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Transferir Fondos</h2>
-        <p className="text-sm text-slate-500 mt-1">Envía dinero instantáneamente a otras cuentas</p>
+        <h2 className="text-3xl font-bold font-serif text-slate-900 tracking-wide">Transferir Fondos</h2>
+        <p className="text-sm text-slate-500 mt-2">Envía dinero instantáneamente a otras cuentas</p>
       </div>
       
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
+      <div className="bg-white/90 backdrop-blur-md shadow-strong border border-white/20 rounded-2xl p-6 sm:p-8">
         {success && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 font-medium flex items-center gap-3">
+          <div className="mb-6 p-4 bg-emerald-50/90 border border-emerald-200 rounded-xl text-emerald-800 font-medium flex items-center gap-3">
             <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
               <span className="text-emerald-600">✓</span>
             </div>
@@ -56,13 +56,12 @@ export default function TransferView() {
         )}
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 font-medium">
+          <div className="mb-6 p-4 bg-red-50/90 border border-red-200 rounded-xl text-red-700 font-medium">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Note: Origen is purposely omitted to extract it globally via store */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
               Cuenta Destino
@@ -73,7 +72,7 @@ export default function TransferView() {
               value={destino}
               onChange={(e) => setDestino(e.target.value)}
               placeholder="Ej. 1002"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-colors"
+              className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
             />
           </div>
 
@@ -89,7 +88,7 @@ export default function TransferView() {
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
               placeholder="0.00"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-lg text-slate-900 focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-colors"
+              className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-bold text-lg text-slate-900 focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
             />
           </div>
 
@@ -101,15 +100,15 @@ export default function TransferView() {
               type="text"
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Opcional: ¿Para qué es esta transferencia?"
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-colors"
+              placeholder="Opcional"
+              className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4"
+            className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4"
           >
             {loading ? (
               <span>Procesando...</span>
