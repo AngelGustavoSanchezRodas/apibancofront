@@ -55,7 +55,7 @@ const server = http.createServer((req, res) => {
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'Referrer-Policy': 'no-referrer-when-downgrade',
-      'Content-Security-Policy': "default-src 'self'; connect-src 'self' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:;"
+      'Content-Security-Policy': "default-src 'self'; connect-src 'self' https: http:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data:;"
     });
 
     fs.createReadStream(filePath).pipe(res);

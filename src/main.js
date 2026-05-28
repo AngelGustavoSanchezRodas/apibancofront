@@ -1,6 +1,6 @@
 import { BancoAPI } from './api.js';
 import * as UI from './ui.js';
-import { ADMIN_DEFAULT_ACCOUNT_ID } from './config.js';
+import { ADMIN_DEFAULT_ACCOUNT_ID, API_URL } from './config.js';
 
 // --- MAPEO DE RUTAS Y ROLES REQUERIDOS ---
 const ROUTES = {
@@ -88,11 +88,28 @@ function setHeaderUserBadge(text) {
 }
 
 function getBitacoraAccountId() {
-  if (localStorage.getItem(BITACORA_ACCOUNT_STORAGE_KEY)) {
-    localStorage.removeItem(BITACORA_ACCOUNT_STORAGE_KEY);
-  }
+  const stored = localStorage.getItem(BITACORA_ACCOUNT_STORAGE_KEY);
+  if (stored) return String(stored);
   if (ADMIN_DEFAULT_ACCOUNT_ID) return String(ADMIN_DEFAULT_ACCOUNT_ID);
   return '';
+}
+
+function persistBitacoraAccountId(idCuenta) {
+  if (idCuenta) {
+    localStorage.setItem(BITACORA_ACCOUNT_STORAGE_KEY, String(idCuenta));
+  }
+}
+
+function showApiConfigWarning() {
+  const banner = document.getElementById('api-config-banner');
+  if (!banner) return;
+  if (!API_URL) {
+    banner.classList.remove('hidden');
+    banner.textContent =
+      'VITE_API_URL no está configurada. Copia .env.example a .env y define la URL del backend.';
+  } else {
+    banner.classList.add('hidden');
+  }
 }
 
 async function loadBitacoraAdmin(idCuenta) {
@@ -235,10 +252,15 @@ function handleRouting() {
       loadBitacoraAdmin(idCuenta);
     }
   }
+
+  if (route === 'aprobaciones' && state.role === 'admin') {
+    cargarAmlKyc();
+  }
 }
 
 // --- INICIALIZACIÓN ---
 document.addEventListener('DOMContentLoaded', () => {
+  showApiConfigWarning();
   setupDemoCredentials();
   UI.setupLiveComision();
   cargarCatalogos();
@@ -298,6 +320,9 @@ document.addEventListener('DOMContentLoaded', () => {
       // Sincronizar estado seguro en memoria
       state.activeUser = credencial;
       state.role = resolveRoleFromStorage(credencial);
+      if (!normalizeRole(localStorage.getItem(ROLE_STORAGE_KEY))) {
+        localStorage.setItem(ROLE_STORAGE_KEY, state.role);
+      }
 
       UI.hideLoginScreen();
       UI.setupTabs(state.role);
@@ -530,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('form-validar-servicio').reset();
       document.getElementById('form-ejecutar-pago').reset();
       document.getElementById('form-ejecutar-pago').classList.add('hidden');
-      document.getElementById('calculo-95-5').classList.add('hidden');
+      document.getElementById('calculo-95-5')?.classList.add('hidden');
       UI.setPagoEstadoValidacion('Sin validar', false);
     } catch (error) {
       UI.showToast(`No se pudo procesar el pago: ${error.message}`, 'error');
@@ -630,7 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checkSessionIntegrity()) return;
 
     const idCuenta = document.getElementById('bitacora-cuenta-id').value;
-
+    persistBitacoraAccountId(idCuenta);
     await loadBitacoraAdmin(idCuenta);
   });
 
@@ -651,6 +676,15 @@ async function refrescarSaldoActivo() {
     UI.updateSaldoUI(saldo, state.activeAccount);
   } catch (err) {
     console.error('Error al autorrefrescar saldo:', err);
+  }
+}
+
+async function cargarAmlKyc() {
+  try {
+    const aml = await BancoAPI.obtenerAmlKyc();
+    UI.renderAmlKycUI(aml);
+  } catch {
+    UI.renderAmlKycUI(null);
   }
 }
 
@@ -678,12 +712,7 @@ async function cargarDiagnosticoCore() {
     UI.renderMetricasOperacionales(null);
   }
 
-  try {
-    const aml = await BancoAPI.obtenerAmlKyc();
-    UI.renderAmlKycUI(aml);
-  } catch (error) {
-    UI.renderAmlKycUI(null);
-  }
+  await cargarAmlKyc();
 }
 
 async function cargarCatalogos() {

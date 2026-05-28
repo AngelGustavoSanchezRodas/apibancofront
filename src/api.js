@@ -225,6 +225,7 @@ export const BancoAPI = {
     localStorage.removeItem('token');
     localStorage.removeItem('credencial');
     localStorage.removeItem(ROLE_STORAGE_KEY);
+    localStorage.removeItem('bitacoraAccountId');
   },
 
   // --- CUENTAHABIENTES ---

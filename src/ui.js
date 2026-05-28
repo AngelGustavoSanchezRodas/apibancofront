@@ -47,10 +47,12 @@ export function hideLoader() {
 // --- LOGIN SCREEN CONTROL ---
 export function showLoginScreen() {
   document.getElementById('login-screen')?.classList.remove('hidden');
+  document.getElementById('btn-logout')?.classList.add('hidden');
 }
 
 export function hideLoginScreen() {
   document.getElementById('login-screen')?.classList.add('hidden');
+  document.getElementById('btn-logout')?.classList.remove('hidden');
 }
 
 // --- NAV TABS ROUTING ---
@@ -106,6 +108,20 @@ export function switchTab(tabId) {
 
 // --- UI UPDATERS & RENDERERS ---
 
+function formatFecha(fecha) {
+  if (!fecha) return '—';
+  const d = new Date(fecha);
+  return Number.isNaN(d.getTime()) ? String(fecha) : d.toLocaleString('es-GT');
+}
+
+function esMovimientoCredito(mov) {
+  const tipo = String(mov?.tipoOperacion ?? mov?.tipo ?? '').toUpperCase();
+  if (tipo === 'CREDITO' || tipo === 'DEPOSITO' || tipo === 'INGRESO') return true;
+  if (tipo === 'DEBITO' || tipo === 'RETIRO' || tipo === 'EGRESO') return false;
+  const monto = Number.parseFloat(mov?.monto ?? 0);
+  return !Number.isNaN(monto) && monto >= 0;
+}
+
 // Actualizar información de saldo en la pantalla de la Cuenta
 export function updateSaldoUI(monto, idCuenta) {
   const saldoElement = document.getElementById('cuenta-val-saldo');
@@ -144,10 +160,10 @@ export function renderKardexUI(movimientos) {
   }
 
   tbody.innerHTML = lista.map(mov => {
-    const isCredito = mov.tipoOperacion === 'CREDITO' || mov.tipo === 'CREDITO' || mov.monto > 0; // Dependiendo de la convención de la API
+    const isCredito = esMovimientoCredito(mov);
     const tipoLabel = isCredito ? 'DEPÓSITO (CREDITO)' : 'RETIRO (DEBITO)';
     const colorClass = isCredito ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold';
-    const fecha = mov.fecha || mov.fechaOperacion || new Date().toLocaleString();
+    const fecha = mov.fecha || mov.fechaOperacion;
     const idTrans = mov.idBitacora || mov.id || '--';
     const ref = mov.referencia || mov.descripcion || 'Sin referencia';
     const montoFormatted = `Q ${Math.abs(parseFloat(mov.monto)).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -155,7 +171,7 @@ export function renderKardexUI(movimientos) {
     return `
       <tr class="border-b hover:bg-slate-50 transition font-medium">
         <td class="p-3 font-mono text-slate-600 text-xs">${idTrans}</td>
-        <td class="p-3 text-slate-600 text-xs">${new Date(fecha).toLocaleString('es-GT')}</td>
+        <td class="p-3 text-slate-600 text-xs">${formatFecha(fecha)}</td>
         <td class="p-3 text-slate-800 text-xs">${ref}</td>
         <td class="p-3 text-xs uppercase text-slate-500">${tipoLabel}</td>
         <td class="p-3 text-right ${colorClass} font-mono">${montoFormatted}</td>
@@ -179,11 +195,11 @@ export function renderBitacoraAdminUI(logs) {
   }
 
   container.innerHTML = lista.map(log => {
-    const isCredito = log.tipoOperacion === 'CREDITO' || log.tipo === 'CREDITO' || log.monto > 0;
+    const isCredito = esMovimientoCredito(log);
     const badgeColor = isCredito ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200';
     const borderClass = isCredito ? 'credito' : 'debito';
     const tipo = isCredito ? 'INGRESO' : 'EGRESO';
-    const fecha = log.fecha || log.fechaOperacion || new Date().toISOString();
+    const fecha = log.fecha || log.fechaOperacion;
     const ref = log.referencia || log.descripcion || log.concepto || 'Sin descripcion';
     const idTrans = log.idBitacora || log.id || '--';
     const monto = Number.parseFloat(log.monto ?? 0);
@@ -197,7 +213,7 @@ export function renderBitacoraAdminUI(logs) {
             <span class="border text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${badgeColor}">${tipo}</span>
           </div>
           <p class="text-sm font-semibold text-slate-800">${ref}</p>
-          <span class="text-xs text-slate-400">${new Date(fecha).toLocaleString('es-GT')}</span>
+          <span class="text-xs text-slate-400">${formatFecha(fecha)}</span>
         </div>
         <div class="text-right">
           <p class="text-lg font-black font-mono text-slate-800">${montoFormatted}</p>
@@ -399,8 +415,8 @@ export function renderDiagnosticsUI(statusData, opts = {}) {
 }
 
 export function renderDiagnosticoServicios(statusData) {
-  const container = document.getElementById('diagnostico-servicios-lista');
-  if (!container) return;
+  const rowsContainer = document.getElementById('diagnostico-servicios-rows');
+  if (!rowsContainer) return;
 
   let items = [];
   if (Array.isArray(statusData)) {
@@ -411,23 +427,15 @@ export function renderDiagnosticoServicios(statusData) {
   }
 
   if (!items || items.length === 0) {
-    container.innerHTML = `
-      <div class="flex items-center justify-between border-b pb-2.5">
-        <span>Estado global</span>
-        <span class="inline-flex items-center gap-2 font-semibold" id="diagnostico-status-integracion">
-          <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-          Sin datos
-        </span>
-      </div>
+    rowsContainer.innerHTML = `
+      <p class="text-slate-500 text-sm italic py-2">Sin detalle por servicio en la respuesta del core.</p>
     `;
     return;
   }
 
-  const rows = items.map((item) => {
+  rowsContainer.innerHTML = items.map((item) => {
     const nombre = String(selectBestValue(item, ['nombre', 'servicio', 'descripcion', 'name']) ?? 'Servicio');
-    const estadoRaw = String(selectBestValue(item, ['estado', 'status', 'health', 'salud']) ?? 'sin datos');
-    const estado = estadoRaw.toLowerCase();
-    const ok = estado === 'healthy' || estado === 'saludable' || estado === 'ok' || estado === 'enlinea' || estado === 'online' || item?.healthy === true || item?.ok === true || item?.activo === true;
+    const ok = integrationItemHealthy(item);
     const color = ok ? 'bg-emerald-500' : 'bg-rose-500';
     const label = ok ? 'En linea' : 'No saludable';
 
@@ -441,17 +449,6 @@ export function renderDiagnosticoServicios(statusData) {
       </div>
     `;
   }).join('');
-
-  container.innerHTML = `
-    <div class="flex items-center justify-between border-b pb-2.5">
-      <span>Estado global</span>
-      <span class="inline-flex items-center gap-2 font-semibold" id="diagnostico-status-integracion">
-        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-        Consultando...
-      </span>
-    </div>
-    ${rows}
-  `;
 }
 
 export function renderMetricasOperacionales(resumen) {
