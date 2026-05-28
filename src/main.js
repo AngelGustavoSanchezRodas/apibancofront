@@ -103,13 +103,14 @@ function persistBitacoraAccountId(idCuenta) {
 function showApiConfigWarning() {
   const banner = document.getElementById('api-config-banner');
   if (!banner) return;
-  if (!API_URL) {
+  const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  if (!API_URL && isLocalhost) {
     banner.classList.remove('hidden');
     banner.textContent =
       'VITE_API_URL no está configurada. Copia .env.example a .env y define la URL del backend.';
-  } else {
-    banner.classList.add('hidden');
+    return;
   }
+  banner.classList.add('hidden');
 }
 
 async function loadBitacoraAdmin(idCuenta) {
@@ -487,6 +488,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const tipoServicio = document.getElementById('pago-servicio').value;
     const identificador = document.getElementById('pago-id').value.trim();
 
+    if (!tipoServicio) {
+      return UI.showToast('Seleccione el servicio antes de consultar.', 'error');
+    }
     if (!identificador) {
       return UI.showToast('Ingrese el identificador del cliente.', 'error');
     }
@@ -520,6 +524,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const tipoServicio = document.getElementById('pago-servicio').value;
     const identificador = document.getElementById('pago-id').value.trim();
+
+    if (!tipoServicio) {
+      return UI.showToast('Seleccione el servicio antes de validar.', 'error');
+    }
 
     UI.showLoader();
     try {

@@ -92,6 +92,58 @@ function asCatalogList(payload) {
     const v = payload[k];
     if (Array.isArray(v)) return v;
   }
+  return findCatalogArray(payload);
+}
+
+function looksLikeCatalogItem(item) {
+  if (item == null || typeof item !== 'object') return false;
+  const keys = [
+    'id',
+    'codigo',
+    'idServicio',
+    'idServicioPublico',
+    'idServicioPago',
+    'idTipoServicio',
+    'idTipoCuenta',
+    'tipo',
+    'tipoServicio',
+    'nombre',
+    'nombreServicio',
+    'descripcion',
+    'descripcionServicio',
+    'label',
+    'titulo',
+    'servicio',
+    'servicioPublico'
+  ];
+  return keys.some((key) => item[key] != null);
+}
+
+function findCatalogArray(payload) {
+  if (payload == null || typeof payload !== 'object') return [];
+  const queue = [payload];
+  const seen = new Set();
+
+  while (queue.length > 0) {
+    const node = queue.shift();
+    if (node && typeof node === 'object') {
+      if (seen.has(node)) continue;
+      seen.add(node);
+      if (Array.isArray(node)) {
+        if (node.length > 0 && node.some(looksLikeCatalogItem)) {
+          return node;
+        }
+        continue;
+      }
+
+      for (const value of Object.values(node)) {
+        if (value && typeof value === 'object') {
+          queue.push(value);
+        }
+      }
+    }
+  }
+
   return [];
 }
 
