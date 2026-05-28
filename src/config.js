@@ -1,7 +1,8 @@
 // Configuracion global del cliente frontend
 const RUNTIME_API_URL = window?.__APP_CONFIG__?.API_URL || '';
 const RAW_API_URL = import.meta.env.VITE_API_URL || RUNTIME_API_URL || '';
-export const API_URL = RAW_API_URL.replace(/\/$/, '');
+const ORIGIN_FALLBACK = typeof window !== 'undefined' ? window.location.origin : '';
+export const API_URL = (RAW_API_URL || ORIGIN_FALLBACK).replace(/\/$/, '');
 export const AUTH_LOGIN_PATH = import.meta.env.VITE_LOGIN_PATH || '/api/Auth/login';
 export const AUTH_LOGIN_CREDENTIAL_FIELD = import.meta.env.VITE_LOGIN_CREDENTIAL_FIELD || 'credencial';
 export const AUTH_LOGIN_PASSWORD_FIELD = import.meta.env.VITE_LOGIN_PASSWORD_FIELD || 'password';
