@@ -6,6 +6,7 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: { sans: ['"Libre Franklin"', 'sans-serif'], serif: ['"Playfair Display"', 'serif'] },
       colors: {
         blue: {
           950: '#0a1b3f',

@@ -32,14 +32,14 @@ export default function ClientLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Navbar Minimalista */}
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 z-10">
+      <header className="h-16 bg-gradient-to-r from-blue-950 to-blue-800 text-white shadow-md flex items-center justify-between px-8 z-10">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-sm">B</span>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Banco Central</h1>
+          <h1 className="text-xl font-bold font-serif tracking-wide text-white">Banco Central</h1>
         </div>
         
         {/* User Profile Dropdown */}
@@ -81,8 +81,8 @@ export default function ClientLayout() {
                     to={item.path} 
                     className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-colors ${
                       isActive 
-                        ? 'bg-slate-900 text-white' 
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        ? 'bg-blue-900/40 text-gold-500 border border-gold-500/30' 
+                        : 'text-gray-600 hover:bg-blue-900/10 hover:text-blue-900'
                     }`}
                   >
                     <item.icon size={20} />

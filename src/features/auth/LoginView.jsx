@@ -47,8 +47,8 @@ export default function LoginView() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+      <div className="bg-white/95 backdrop-blur-md shadow-strong border border-white/20 p-8 rounded-2xl w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mx-auto mb-4">
             <Lock size={24} />
@@ -107,7 +107,7 @@ export default function LoginView() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+            className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
           >
             {loading ? 'Verificando...' : 'Autenticar'}
           </button>
