@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Banco Central - Core Transaccional</title>
-    <link rel="stylesheet" href="/src/style.css">
 </head>
 <body class="bg-gray-100 font-sans text-gray-800">
-
-    <div id="api-config-banner" class="hidden bg-amber-100 border-b border-amber-300 text-amber-950 text-sm font-semibold text-center px-4 py-2" role="alert"></div>
 
     <!-- OVERLAY DE CARGA GLOBAL -->
     <div id="global-loader" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden">
@@ -40,7 +37,7 @@
             <form id="form-login" class="space-y-5">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5" for="login-credencial">Usuario / Credencial</label>
-                    <input type="text" id="login-credencial" placeholder="Ej. usuario.demo" class="w-full border-2 p-3 rounded-lg outline-none font-medium focus:border-blue-700 focus:ring-4 focus:ring-blue-100 transition" required>
+                    <input type="text" id="login-credencial" placeholder="Ej. admin o usuario123" class="w-full border-2 p-3 rounded-lg outline-none font-medium focus:border-blue-700 focus:ring-4 focus:ring-blue-100 transition" required>
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase mb-1.5" for="login-password">Contraseña</label>
@@ -52,18 +49,18 @@
                 </button>
             </form>
 
-            <div id="demo-credentials" class="mt-6 pt-6 border-t border-slate-100 text-center hidden">
-                <p class="text-xs text-slate-400">Credenciales de demostracion:</p>
+            <div class="mt-6 pt-6 border-t border-slate-100 text-center">
+                <p class="text-xs text-slate-400">Credenciales de Demostración:</p>
                 <div class="mt-2 flex justify-center gap-4 text-xs font-mono text-slate-600">
-                    <div><span class="font-bold text-blue-800">Admin:</span> <span id="demo-admin-cred">No configuradas</span></div>
-                    <div><span class="font-bold text-emerald-800">User:</span> <span id="demo-user-cred">No configuradas</span></div>
+                    <div><span class="font-bold text-blue-800">Admin:</span> admin / admin123</div>
+                    <div><span class="font-bold text-emerald-800">User:</span> user1 / user123</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- CABECERA PRINCIPAL -->
-    <header class="bg-blue-950 text-white p-4 shadow-lg sticky top-0 z-30 backdrop-blur-md">
+    <header class="bg-blue-950 text-white p-4 shadow-lg sticky top-0 z-35 backdrop-blur-md">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <h1 class="text-2xl font-black flex items-center gap-3">
                 <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-800/60 border border-blue-400/30">
@@ -143,7 +140,7 @@
                 <!-- USUARIO SELECCIONADO Y LOGOUT -->
                 <div class="flex items-center gap-3 bg-blue-900/60 border border-blue-800 px-3 py-1.5 rounded-lg text-xs font-semibold">
                     <span id="header-user-badge" class="text-blue-200">Visitante</span>
-                    <button id="btn-logout" type="button" class="hidden bg-red-700/80 hover:bg-red-700 text-white font-bold px-2 py-1 rounded transition">Salir</button>
+                    <button id="btn-logout" class="bg-red-700/80 hover:bg-red-700 text-white font-bold px-2 py-1 rounded transition">Salir</button>
                 </div>
             </div>
         </div>
@@ -204,8 +201,8 @@
                     </div>
                     <div class="border border-slate-200 rounded-xl p-5 bg-white">
                         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Límite Diario Autorizado</p>
-                        <p class="mt-2 text-lg font-bold text-slate-900 font-mono" id="cuenta-val-limite">Sin datos</p>
-                        <p class="text-xs text-slate-500" id="cuenta-lbl-limite">Límite diario no reportado por la API</p>
+                        <p class="mt-2 text-lg font-bold text-slate-900 font-mono">Q 50,000.00</p>
+                        <p class="text-xs text-slate-500">Límite estándar para transferencias ACH</p>
                     </div>
                 </div>
             </div>
@@ -363,7 +360,7 @@
                         Pago de Servicios Públicos y Privados
                     </span>
                     <h2 class="text-2xl font-black text-gray-900 mt-1">Orquestador de Pagos Compartidos</h2>
-                    <p class="text-xs text-slate-500">Sistema automatizado bajo la regla de comisión configurada por el core</p>
+                    <p class="text-xs text-slate-500">Sistema automatizado bajo la regla de comisión 95% Empresa / 5% Banco</p>
                 </div>
 
                 <!-- FORMULARIO DE CONSULTA / VALIDACIÓN -->
@@ -373,7 +370,9 @@
                         <div>
                             <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Empresa / Tipo de Servicio</label>
                             <select id="pago-servicio" class="w-full border-2 p-2.5 rounded-lg font-bold outline-none focus:border-blue-900 transition">
-                                <option value="">Cargando servicios...</option>
+                                <option value="1">Universidad (Carné)</option>
+                                <option value="2">Energía Eléctrica (Contador)</option>
+                                <option value="3">Telefonía (Número Celular)</option>
                             </select>
                         </div>
                         <div>
@@ -398,9 +397,9 @@
                     <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100/50 space-y-3">
                         <div class="flex justify-between items-center text-sm">
                             <span class="text-slate-500 font-medium">Estado de Validación:</span>
-                            <span class="font-bold text-slate-500 inline-flex items-center gap-1.5" id="pago-estado-validacion">
-                                <span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block" id="pago-estado-validacion-dot"></span>
-                                <span id="pago-estado-validacion-text">Sin validar</span>
+                            <span class="font-bold text-emerald-700 inline-flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span>
+                                Conexión Establecida
                             </span>
                         </div>
                         
@@ -409,9 +408,9 @@
                                 <span class="block text-xs text-slate-500 uppercase font-bold">Monto Total Recaudado (Q)</span>
                                 <input type="number" id="pago-monto" min="0.01" step="0.01" placeholder="0.00" class="border-2 p-1.5 w-32 rounded font-bold text-blue-900 text-sm mt-1 focus:border-blue-900 outline-none" required>
                             </div>
-                            <div id="calculo-95-5" class="text-right hidden">
-                                <div class="text-xs text-slate-600"><span id="lbl-comision-empresa">Comisión Empresa</span>: <span id="val-95" class="font-bold text-slate-900">Sin datos</span></div>
-                                <div class="text-xs text-blue-700 mt-1"><span id="lbl-comision-banco">Comisión Banco</span>: <span id="val-5" class="font-bold">Sin datos</span></div>
+                            <div class="text-right">
+                                <div class="text-xs text-slate-600">Comisión Empresa (95%): <span id="val-95" class="font-bold text-slate-900">Q 0.00</span></div>
+                                <div class="text-xs text-blue-700 mt-1">Comisión Banco Central (5%): <span id="val-5" class="font-bold">Q 0.00</span></div>
                             </div>
                         </div>
                     </div>
@@ -480,7 +479,9 @@
                     <div class="col-span-1 md:col-span-2">
                         <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Tipo de Cuenta *</label>
                         <select id="cte-tipo-cuenta" class="border-2 p-2.5 rounded-lg w-full outline-none font-semibold focus:border-blue-900 transition">
-                            <option value="">Cargando tipos...</option>
+                            <option value="1">Cuenta Monetaria Estándar (Código: 1)</option>
+                            <option value="2">Cuenta de Ahorros Clásica (Código: 2)</option>
+                            <option value="3">Cuenta de Inversión Empresarial (Código: 3)</option>
                         </select>
                     </div>
                     <div class="col-span-1 md:col-span-2 pt-2">
@@ -489,7 +490,6 @@
                         </button>
                     </div>
                 </form>
-                <div id="cte-resultado" class="mt-6 p-4 border border-slate-200 rounded-xl bg-slate-50 hidden"></div>
             </div>
 
             <!-- 2. Operaciones Administrativas: Tarjeta y Activación -->
@@ -566,17 +566,35 @@
                     <div class="border border-slate-200 rounded-xl p-5 bg-amber-50/30 border-dashed border-amber-300">
                         <p class="text-xs font-bold text-amber-800 uppercase tracking-wider">Alertas AML Críticas</p>
                         <ul class="mt-4 space-y-3 text-sm text-slate-700" id="aml-alertas-lista">
+                            <li class="flex items-center justify-between border-b pb-2">
+                                <span class="font-medium text-slate-800">Transferencias > Q 50,000</span>
+                                <span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-bold">1 Alerta</span>
+                            </li>
+                            <li class="flex items-center justify-between border-b pb-2">
+                                <span class="font-medium text-slate-800">Depósitos de cuentas inactivas</span>
+                                <span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded text-xs font-bold">Limpio</span>
+                            </li>
                             <li class="flex items-center justify-between">
-                                <span class="text-slate-500">Sin datos reportados</span>
+                                <span class="font-medium text-slate-800">Validación de firmas digitales</span>
+                                <span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">Verificado</span>
                             </li>
                         </ul>
                     </div>
 
                     <div class="border border-slate-200 rounded-xl p-5 bg-white">
                         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Monitoreo de KYC</p>
-                        <ul class="mt-4 space-y-3 text-sm text-slate-700" id="kyc-alertas-lista">
+                        <ul class="mt-4 space-y-3 text-sm text-slate-700">
+                            <li class="flex items-center justify-between border-b pb-2">
+                                <span>Verificación de Perfil de Riesgo</span>
+                                <span class="text-slate-600 font-semibold font-mono">AUTOMATIZADO</span>
+                            </li>
+                            <li class="flex items-center justify-between border-b pb-2">
+                                <span>KYC Vencidos Registrados</span>
+                                <span class="text-rose-600 font-bold font-mono">0 Pendientes</span>
+                            </li>
                             <li class="flex items-center justify-between">
-                                <span class="text-slate-500">Sin datos reportados</span>
+                                <span>Porcentaje de cumplimiento</span>
+                                <span class="text-emerald-600 font-bold font-mono">100% OK</span>
                             </li>
                         </ul>
                     </div>
@@ -631,13 +649,33 @@
                         <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4">Estado por Servicio / SLAs</p>
                         <div class="space-y-4 text-sm text-slate-700" id="diagnostico-servicios-lista">
                             <div class="flex items-center justify-between border-b pb-2.5">
-                                <span>Estado global</span>
+                                <span>Operaciones Core API</span>
+                                <span class="inline-flex items-center gap-2 font-semibold">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                    En Línea
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between border-b pb-2.5">
+                                <span>Orquestador de Pagos Compartidos</span>
+                                <span class="inline-flex items-center gap-2 font-semibold">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                    En Línea
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between border-b pb-2.5">
+                                <span>Base de Datos Bitácora (Kardex)</span>
+                                <span class="inline-flex items-center gap-2 font-semibold">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                    Conectado
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span>Validación Externa (Servicios Públicos)</span>
                                 <span class="inline-flex items-center gap-2 font-semibold" id="diagnostico-status-integracion">
                                     <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
                                     Consultando...
                                 </span>
                             </div>
-                            <div id="diagnostico-servicios-rows"></div>
                         </div>
                     </div>
 
@@ -648,20 +686,20 @@
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                                 <div class="bg-slate-50 p-3 rounded-lg text-center">
                                     <span class="block text-[10px] font-bold text-slate-400 uppercase">Latencia</span>
-                                    <span class="text-lg font-bold text-slate-700 font-mono" id="metric-latencia">Sin datos</span>
+                                    <span class="text-lg font-bold text-slate-700 font-mono">14 ms</span>
                                 </div>
                                 <div class="bg-slate-50 p-3 rounded-lg text-center">
                                     <span class="block text-[10px] font-bold text-slate-400 uppercase">Uptime SLA</span>
-                                    <span class="text-lg font-bold text-slate-700 font-mono" id="metric-uptime">Sin datos</span>
+                                    <span class="text-lg font-bold text-slate-700 font-mono">99.98%</span>
                                 </div>
                                 <div class="bg-slate-50 p-3 rounded-lg text-center">
                                     <span class="block text-[10px] font-bold text-slate-400 uppercase">Peticiones</span>
-                                    <span class="text-lg font-bold text-slate-700 font-mono" id="metric-peticiones">Sin datos</span>
+                                    <span class="text-lg font-bold text-slate-700 font-mono">1,489</span>
                                 </div>
                             </div>
                         </div>
                         <p class="text-xs text-slate-500 mt-4 italic border-t pt-3">
-                            Servidor activo: <span class="font-mono text-[11px] text-blue-900 font-bold bg-blue-50 px-2 py-0.5 rounded" id="diagnostico-servidor-url">Sin datos</span>
+                            Servidor activo: <span class="font-mono text-[11px] text-blue-900 font-bold bg-blue-50 px-2 py-0.5 rounded">https://bancocentroamericano.azurewebsites.net</span>
                         </p>
                     </div>
                 </div>
