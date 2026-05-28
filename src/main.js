@@ -21,7 +21,6 @@ const ADMIN_ALIASES = ADMIN_ALIAS_ENV
   .split(',')
   .map((alias) => alias.trim())
   .filter(Boolean);
-const FALLBACK_ADMIN_ALIASES = ADMIN_ALIASES.length > 0 ? ADMIN_ALIASES : ['admin'];
 
 function normalizeRole(rawRole) {
   if (rawRole == null) return null;
@@ -35,7 +34,8 @@ function normalizeRole(rawRole) {
 function resolveRoleFromCredencial(credencial) {
   if (!credencial) return 'usuario';
   const normalized = String(credencial).trim().toLowerCase();
-  const isAdmin = FALLBACK_ADMIN_ALIASES.some((alias) => alias.toLowerCase() === normalized);
+  if (ADMIN_ALIASES.length === 0) return 'usuario';
+  const isAdmin = ADMIN_ALIASES.some((alias) => alias.toLowerCase() === normalized);
   return isAdmin ? 'admin' : 'usuario';
 }
 
@@ -237,6 +237,8 @@ function handleRouting() {
 document.addEventListener('DOMContentLoaded', () => {
   setupDemoCredentials();
   UI.setupLiveComision();
+  cargarCatalogos();
+  cargarConfigUI();
   
   // Configurar listeners de clicks en los botones de navegación
   document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -466,9 +468,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       UI.showToast(`Deuda de Q ${parseFloat(montoDeuda).toFixed(2)} cargada del sistema externo.`, 'success');
+      UI.setPagoEstadoValidacion('Deuda consultada', true);
       document.getElementById('form-ejecutar-pago').classList.remove('hidden');
     } catch (error) {
       UI.showToast(`No se pudo obtener la deuda: ${error.message}`, 'error');
+      UI.setPagoEstadoValidacion('Consulta fallida', false);
     } finally {
       UI.hideLoader();
     }
@@ -486,9 +490,11 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       await BancoAPI.validarPago(tipoServicio, identificador);
       UI.showToast('Identificador de cliente validado y listo para cobrar.', 'success');
+      UI.setPagoEstadoValidacion('Validacion exitosa', true);
       document.getElementById('form-ejecutar-pago').classList.remove('hidden');
     } catch (error) {
       UI.showToast(`Error de validación del servicio: ${error.message}`, 'error');
+      UI.setPagoEstadoValidacion('Validacion fallida', false);
     } finally {
       UI.hideLoader();
     }
@@ -509,14 +515,16 @@ document.addEventListener('DOMContentLoaded', () => {
     UI.showLoader();
     try {
       await BancoAPI.ejecutarPago(tarjeta, pin, tipoServicio, identificador, monto, referenciaCliente);
-      UI.showToast(`Pago orquestado con éxito. Q ${parseFloat(monto).toFixed(2)} liquidado bajo la regla 95/5.`, 'success');
+      UI.showToast(`Pago orquestado con éxito. Q ${parseFloat(monto).toFixed(2)} liquidado según la regla configurada por el core.`, 'success');
       
       document.getElementById('form-validar-servicio').reset();
       document.getElementById('form-ejecutar-pago').reset();
       document.getElementById('form-ejecutar-pago').classList.add('hidden');
       document.getElementById('calculo-95-5').classList.add('hidden');
+      UI.setPagoEstadoValidacion('Sin validar', false);
     } catch (error) {
       UI.showToast(`No se pudo procesar el pago: ${error.message}`, 'error');
+      UI.setPagoEstadoValidacion('Pago fallido', false);
     } finally {
       UI.hideLoader();
     }
@@ -547,6 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       
       UI.showToast(msg, 'success');
+      UI.renderCuentahabienteCreado(res, { dpi, nit, nombre, apellido, telefono, email });
       document.getElementById('form-cuentahabiente').reset();
     } catch (error) {
       UI.showToast(`Error al registrar cuentahabiente: ${error.message}`, 'error');
@@ -643,8 +652,53 @@ async function cargarDiagnosticoCore() {
   
   try {
     const status = await BancoAPI.obtenerIntegraciones();
+    UI.renderDiagnosticoServicios(status);
     UI.renderDiagnosticsUI(status);
+    UI.renderMetricasOperacionales(status);
   } catch (error) {
     UI.renderDiagnosticsUI(null, { fetchFailed: true });
+    UI.renderDiagnosticoServicios(null);
+    UI.renderMetricasOperacionales(null);
+  }
+
+  try {
+    const resumen = await BancoAPI.obtenerResumenOperacional();
+    UI.renderMetricasOperacionales(resumen);
+  } catch (error) {
+    UI.renderMetricasOperacionales(null);
+  }
+
+  try {
+    const aml = await BancoAPI.obtenerAmlKyc();
+    UI.renderAmlKycUI(aml);
+  } catch (error) {
+    UI.renderAmlKycUI(null);
+  }
+}
+
+async function cargarCatalogos() {
+  try {
+    const servicios = await BancoAPI.obtenerServiciosPago();
+    UI.renderServiciosCatalogo(servicios);
+  } catch (error) {
+    UI.renderServiciosCatalogo([]);
+  }
+
+  try {
+    const tipos = await BancoAPI.obtenerTiposCuenta();
+    UI.renderTiposCuentaCatalogo(tipos);
+  } catch (error) {
+    UI.renderTiposCuentaCatalogo([]);
+  }
+}
+
+async function cargarConfigUI() {
+  try {
+    const config = await BancoAPI.obtenerUiConfig();
+    UI.renderLimiteCuentaUI(config);
+    UI.renderComisionConfig(config);
+  } catch (error) {
+    UI.renderLimiteCuentaUI(null);
+    UI.renderComisionConfig(null);
   }
 }

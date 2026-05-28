@@ -207,6 +207,72 @@ export function renderBitacoraAdminUI(logs) {
   }).join('');
 }
 
+function selectBestValue(item, keys) {
+  for (const key of keys) {
+    if (item && item[key] != null) return item[key];
+  }
+  return null;
+}
+
+function normalizeCatalogItem(item) {
+  if (item == null || typeof item !== 'object') return null;
+  const value = selectBestValue(item, ['id', 'codigo', 'idServicio', 'idTipoCuenta', 'tipo', 'value']);
+  const label = selectBestValue(item, ['nombre', 'descripcion', 'label', 'titulo', 'tipoCuenta', 'servicio']);
+  if (value == null || label == null) return null;
+  return { value: String(value), label: String(label) };
+}
+
+function renderCatalogSelect(selectEl, items, emptyLabel) {
+  if (!selectEl) return;
+  const normalized = (Array.isArray(items) ? items : []).map(normalizeCatalogItem).filter(Boolean);
+
+  selectEl.innerHTML = '';
+
+  if (normalized.length === 0) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = emptyLabel || 'Sin datos';
+    selectEl.appendChild(opt);
+    return;
+  }
+
+  normalized.forEach(item => {
+    const opt = document.createElement('option');
+    opt.value = item.value;
+    opt.textContent = item.label;
+    selectEl.appendChild(opt);
+  });
+}
+
+export function renderServiciosCatalogo(servicios) {
+  const select = document.getElementById('pago-servicio');
+  renderCatalogSelect(select, servicios, 'Sin servicios disponibles');
+}
+
+export function renderTiposCuentaCatalogo(tipos) {
+  const select = document.getElementById('cte-tipo-cuenta');
+  renderCatalogSelect(select, tipos, 'Sin tipos disponibles');
+}
+
+export function renderLimiteCuentaUI(data) {
+  const montoEl = document.getElementById('cuenta-val-limite');
+  const textoEl = document.getElementById('cuenta-lbl-limite');
+  if (!montoEl || !textoEl) return;
+
+  const limite = selectBestValue(data, ['limiteDiario', 'limite', 'montoMaximo', 'montoDiario']);
+  const descripcion = selectBestValue(data, ['descripcionLimite', 'notaLimite', 'detalleLimite']);
+
+  if (limite != null && !Number.isNaN(Number(limite))) {
+    const monto = Number(limite);
+    montoEl.textContent = `Q ${monto.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    textoEl.textContent = descripcion ? String(descripcion) : 'Limite operativo reportado por el core';
+    return;
+  }
+
+  montoEl.textContent = 'Sin datos';
+  textoEl.textContent = 'Limite diario no reportado por la API';
+}
+
 function integrationItemHealthy(item) {
   if (item == null || typeof item !== 'object') return false;
   if (item.healthy === true || item.activo === true || item.enLinea === true || item.ok === true) return true;
@@ -301,7 +367,150 @@ export function renderDiagnosticsUI(statusData, opts = {}) {
   }
 }
 
-// --- COMISIÓN 95/5 LIVE CALCULATION ---
+export function renderDiagnosticoServicios(statusData) {
+  const container = document.getElementById('diagnostico-servicios-lista');
+  if (!container) return;
+
+  let items = [];
+  if (Array.isArray(statusData)) {
+    items = statusData;
+  } else if (statusData && typeof statusData === 'object') {
+    if (Array.isArray(statusData.servicios)) items = statusData.servicios;
+    if (Array.isArray(statusData.integraciones)) items = statusData.integraciones;
+  }
+
+  if (!items || items.length === 0) {
+    container.innerHTML = `
+      <div class="flex items-center justify-between border-b pb-2.5">
+        <span>Estado global</span>
+        <span class="inline-flex items-center gap-2 font-semibold" id="diagnostico-status-integracion">
+          <span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>
+          Sin datos
+        </span>
+      </div>
+    `;
+    return;
+  }
+
+  const rows = items.map((item) => {
+    const nombre = String(selectBestValue(item, ['nombre', 'servicio', 'descripcion', 'name']) ?? 'Servicio');
+    const estadoRaw = String(selectBestValue(item, ['estado', 'status', 'health', 'salud']) ?? 'sin datos');
+    const estado = estadoRaw.toLowerCase();
+    const ok = estado === 'healthy' || estado === 'saludable' || estado === 'ok' || estado === 'enlinea' || estado === 'online' || item?.healthy === true || item?.ok === true || item?.activo === true;
+    const color = ok ? 'bg-emerald-500' : 'bg-rose-500';
+    const label = ok ? 'En linea' : 'No saludable';
+
+    return `
+      <div class="flex items-center justify-between border-b pb-2.5">
+        <span>${nombre}</span>
+        <span class="inline-flex items-center gap-2 font-semibold">
+          <span class="w-2.5 h-2.5 rounded-full ${color}"></span>
+          ${label}
+        </span>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="flex items-center justify-between border-b pb-2.5">
+      <span>Estado global</span>
+      <span class="inline-flex items-center gap-2 font-semibold" id="diagnostico-status-integracion">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+        Consultando...
+      </span>
+    </div>
+    ${rows}
+  `;
+}
+
+export function renderMetricasOperacionales(resumen) {
+  const latenciaEl = document.getElementById('metric-latencia');
+  const uptimeEl = document.getElementById('metric-uptime');
+  const peticionesEl = document.getElementById('metric-peticiones');
+  const serverEl = document.getElementById('diagnostico-servidor-url');
+
+  if (!latenciaEl || !uptimeEl || !peticionesEl || !serverEl) return;
+
+  const latencia = selectBestValue(resumen, ['latenciaMs', 'latencia', 'latency']);
+  const uptime = selectBestValue(resumen, ['uptime', 'uptimePorcentaje', 'sla']);
+  const peticiones = selectBestValue(resumen, ['peticiones24h', 'peticiones', 'requests']);
+  const servidor = selectBestValue(resumen, ['servidor', 'server', 'apiUrl', 'endpoint']);
+
+  const latenciaText = latencia != null ? String(latencia) : '';
+  const uptimeText = uptime != null ? String(uptime) : '';
+  latenciaEl.textContent = latenciaText ? (latenciaText.includes('ms') ? latenciaText : `${latenciaText} ms`) : 'Sin datos';
+  uptimeEl.textContent = uptimeText ? (uptimeText.includes('%') ? uptimeText : `${uptimeText}%`) : 'Sin datos';
+  peticionesEl.textContent = peticiones != null ? String(peticiones) : 'Sin datos';
+  serverEl.textContent = servidor ? String(servidor) : 'Sin datos';
+}
+
+export function renderAmlKycUI(data) {
+  const amlList = document.getElementById('aml-alertas-lista');
+  const kycList = document.getElementById('kyc-alertas-lista');
+  if (!amlList || !kycList) return;
+
+  const aml = Array.isArray(data?.aml) ? data.aml : Array.isArray(data?.alertasAml) ? data.alertasAml : [];
+  const kyc = Array.isArray(data?.kyc) ? data.kyc : Array.isArray(data?.alertasKyc) ? data.alertasKyc : [];
+
+  if (aml.length === 0) {
+    amlList.innerHTML = `<li class="flex items-center justify-between"><span class="text-slate-500">Sin datos reportados</span></li>`;
+  } else {
+    amlList.innerHTML = aml.map(item => {
+      const nombre = String(selectBestValue(item, ['nombre', 'descripcion', 'alerta', 'label']) ?? 'Alerta AML');
+      const valor = String(selectBestValue(item, ['valor', 'estado', 'cantidad', 'status']) ?? 'Sin datos');
+      return `
+        <li class="flex items-center justify-between border-b pb-2">
+          <span class="font-medium text-slate-800">${nombre}</span>
+          <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs font-bold">${valor}</span>
+        </li>
+      `;
+    }).join('');
+  }
+
+  if (kyc.length === 0) {
+    kycList.innerHTML = `<li class="flex items-center justify-between"><span class="text-slate-500">Sin datos reportados</span></li>`;
+  } else {
+    kycList.innerHTML = kyc.map(item => {
+      const nombre = String(selectBestValue(item, ['nombre', 'descripcion', 'control', 'label']) ?? 'Control KYC');
+      const valor = String(selectBestValue(item, ['valor', 'estado', 'cantidad', 'status']) ?? 'Sin datos');
+      return `
+        <li class="flex items-center justify-between border-b pb-2">
+          <span>${nombre}</span>
+          <span class="text-slate-600 font-semibold font-mono">${valor}</span>
+        </li>
+      `;
+    }).join('');
+  }
+}
+
+// --- COMISION LIVE CALCULATION ---
+let comisionEmpresa = null;
+let comisionBanco = null;
+
+export function renderComisionConfig(config) {
+  const empresaPct = selectBestValue(config, ['comisionEmpresa', 'porcentajeEmpresa', 'pctEmpresa']);
+  const bancoPct = selectBestValue(config, ['comisionBanco', 'porcentajeBanco', 'pctBanco']);
+  const labelEmpresa = document.getElementById('lbl-comision-empresa');
+  const labelBanco = document.getElementById('lbl-comision-banco');
+
+  if (empresaPct != null && bancoPct != null) {
+    const empresaNum = Number(empresaPct);
+    const bancoNum = Number(bancoPct);
+    comisionEmpresa = empresaNum > 1 ? empresaNum / 100 : empresaNum;
+    comisionBanco = bancoNum > 1 ? bancoNum / 100 : bancoNum;
+  } else {
+    comisionEmpresa = null;
+    comisionBanco = null;
+  }
+
+  if (labelEmpresa) {
+    labelEmpresa.textContent = empresaPct != null ? `Comisión Empresa (${empresaPct}%)` : 'Comisión Empresa';
+  }
+  if (labelBanco) {
+    labelBanco.textContent = bancoPct != null ? `Comisión Banco (${bancoPct}%)` : 'Comisión Banco';
+  }
+}
+
 export function setupLiveComision() {
   const montoInput = document.getElementById('pago-monto');
   const calculoDiv = document.getElementById('calculo-95-5');
@@ -313,11 +522,56 @@ export function setupLiveComision() {
   montoInput.addEventListener('input', (e) => {
     const total = parseFloat(e.target.value);
     if (total > 0) {
-      calculoDiv?.classList.remove('hidden');
-      if (val95) val95.innerText = "Q " + (total * 0.95).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      if (val5) val5.innerText = "Q " + (total * 0.05).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (comisionEmpresa != null && comisionBanco != null) {
+        calculoDiv?.classList.remove('hidden');
+        if (val95) val95.innerText = "Q " + (total * comisionEmpresa).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (val5) val5.innerText = "Q " + (total * comisionBanco).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      } else {
+        if (val95) val95.innerText = 'Sin datos';
+        if (val5) val5.innerText = 'Sin datos';
+        calculoDiv?.classList.remove('hidden');
+      }
     } else {
       calculoDiv?.classList.add('hidden');
     }
   });
+}
+
+export function setPagoEstadoValidacion(estado, ok = false) {
+  const label = document.getElementById('pago-estado-validacion');
+  const dot = document.getElementById('pago-estado-validacion-dot');
+  const text = document.getElementById('pago-estado-validacion-text');
+  if (!label || !dot) return;
+
+  if (text) text.textContent = estado;
+  label.className = `font-bold inline-flex items-center gap-1.5 ${ok ? 'text-emerald-700' : 'text-slate-500'}`;
+  dot.className = `w-2.5 h-2.5 rounded-full inline-block ${ok ? 'bg-emerald-500' : 'bg-slate-400'}`;
+}
+
+export function renderCuentahabienteCreado(payload, fallback) {
+  const panel = document.getElementById('cte-resultado');
+  if (!panel) return;
+
+  const data = payload && typeof payload === 'object' ? payload : {};
+  const nombre = selectBestValue(data, ['nombre', 'nombres']) ?? fallback?.nombre ?? '';
+  const apellido = selectBestValue(data, ['apellido', 'apellidos']) ?? fallback?.apellido ?? '';
+  const dpi = selectBestValue(data, ['dpi', 'documento']) ?? fallback?.dpi ?? '';
+  const nit = selectBestValue(data, ['nit']) ?? fallback?.nit ?? '';
+  const telefono = selectBestValue(data, ['telefono', 'telefonoMovil']) ?? fallback?.telefono ?? '';
+  const email = selectBestValue(data, ['email', 'correo']) ?? fallback?.email ?? '';
+  const idCuenta = selectBestValue(data, ['idCuenta', 'cuentaId']) ?? '';
+  const idCliente = selectBestValue(data, ['idCuentahabiente', 'idCliente', 'clienteId']) ?? '';
+
+  panel.classList.remove('hidden');
+  panel.innerHTML = `
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+      <div><span class="text-xs text-slate-500 uppercase font-bold">Titular</span><p class="font-semibold">${[nombre, apellido].filter(Boolean).join(' ') || 'Sin datos'}</p></div>
+      <div><span class="text-xs text-slate-500 uppercase font-bold">ID Cuenta</span><p class="font-mono font-semibold">${idCuenta || 'Sin datos'}</p></div>
+      <div><span class="text-xs text-slate-500 uppercase font-bold">ID Cliente</span><p class="font-mono font-semibold">${idCliente || 'Sin datos'}</p></div>
+      <div><span class="text-xs text-slate-500 uppercase font-bold">DPI</span><p class="font-semibold">${dpi || 'Sin datos'}</p></div>
+      <div><span class="text-xs text-slate-500 uppercase font-bold">NIT</span><p class="font-semibold">${nit || 'Sin datos'}</p></div>
+      <div><span class="text-xs text-slate-500 uppercase font-bold">Telefono</span><p class="font-semibold">${telefono || 'Sin datos'}</p></div>
+      <div><span class="text-xs text-slate-500 uppercase font-bold">Email</span><p class="font-semibold">${email || 'Sin datos'}</p></div>
+    </div>
+  `;
 }

@@ -3,7 +3,8 @@ import {
   AUTH_LOGIN_PATH,
   AUTH_LOGIN_CREDENTIAL_FIELD,
   AUTH_LOGIN_PASSWORD_FIELD,
-  API_WITH_CREDENTIALS
+  API_WITH_CREDENTIALS,
+  UI_CONFIG_PATH
 } from './config.js';
 
 const ROLE_STORAGE_KEY = 'role';
@@ -64,6 +65,17 @@ function asMovimientosList(payload) {
   if (Array.isArray(payload)) return payload;
   if (payload == null || typeof payload !== 'object') return [];
   const keys = ['data', 'items', 'movimientos', 'registros', 'result', 'kardex', 'bitacora'];
+  for (const k of keys) {
+    const v = payload[k];
+    if (Array.isArray(v)) return v;
+  }
+  return [];
+}
+
+function asCatalogList(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload == null || typeof payload !== 'object') return [];
+  const keys = ['data', 'items', 'result', 'catalogo', 'catalogoServicios', 'catalogoTipos', 'servicios', 'tipos'];
   for (const k of keys) {
     const v = payload[k];
     if (Array.isArray(v)) return v;
@@ -278,5 +290,28 @@ export const BancoAPI = {
 
   async obtenerIntegraciones() {
     return await request('/api/diagnostico/integraciones');
+  },
+
+  async obtenerServiciosPago() {
+    const raw = await request('/api/Catalogos/servicios');
+    return asCatalogList(raw);
+  },
+
+  async obtenerTiposCuenta() {
+    const raw = await request('/api/Catalogos/tipos-cuenta');
+    return asCatalogList(raw);
+  },
+
+  async obtenerResumenOperacional() {
+    return await request('/api/diagnostico/resumen');
+  },
+
+  async obtenerAmlKyc() {
+    return await request('/api/diagnostico/aml');
+  },
+
+  async obtenerUiConfig() {
+    if (!UI_CONFIG_PATH) return null;
+    return await request(UI_CONFIG_PATH);
   }
 };

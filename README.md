@@ -1,6 +1,6 @@
 # Banco Central — Frontend (Core transaccional)
 
-SPA en Vite + Tailwind que consume la API publicada en `VITE_API_URL` (por defecto `https://bancocentroamericano.azurewebsites.net`).
+SPA en Vite + Tailwind que consume la API publicada en `VITE_API_URL` (sin valores quemados en el frontend).
 
 ## Requisitos
 
