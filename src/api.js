@@ -146,6 +146,19 @@ async function request(path, options = {}) {
   }
 }
 
+async function requestFirstOk(paths, options = {}) {
+  let lastError = null;
+  for (const path of paths) {
+    try {
+      return await request(path, options);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (lastError) throw lastError;
+  throw new Error('No hay endpoints disponibles');
+}
+
 export const BancoAPI = {
   // --- AUTH ---
   async login(credencial, password) {
@@ -322,12 +335,23 @@ export const BancoAPI = {
   },
 
   async obtenerServiciosPago() {
-    const raw = await request('/api/Catalogos/servicios');
+    const raw = await requestFirstOk([
+      '/api/Catalogos/servicios',
+      '/api/Servicios',
+      '/api/Pagos/servicios',
+      '/api/Pagos/catalogo-servicios',
+      '/api/ServiciosPublicos'
+    ]);
     return asCatalogList(raw);
   },
 
   async obtenerTiposCuenta() {
-    const raw = await request('/api/Catalogos/tipos-cuenta');
+    const raw = await requestFirstOk([
+      '/api/Catalogos/tipos-cuenta',
+      '/api/TiposCuenta',
+      '/api/Cuentas/tipos',
+      '/api/Cuentahabientes/tipos-cuenta'
+    ]);
     return asCatalogList(raw);
   },
 
