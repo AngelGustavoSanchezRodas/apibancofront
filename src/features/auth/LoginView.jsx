@@ -19,17 +19,11 @@ export default function LoginView() {
     setLoading(true);
 
     try {
-      const response = await api.post('/api/Auth/login', {
-        username,
-        password
-      });
-
+      const response = await api.post('/api/Auth/login', { username, password });
       const { token, role, userId } = response.data;
       
-      // Update global store
       login(token, role, userId);
 
-      // Redirect based on role
       if (role === 'ADMIN') {
         navigate('/admin', { replace: true });
       } else {
@@ -48,13 +42,13 @@ export default function LoginView() {
 
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
-      <div className="bg-white/95 backdrop-blur-md shadow-strong border border-white/20 p-8 rounded-2xl w-full max-w-md">
+      <div className="bg-white/90 backdrop-blur-md shadow-strong border border-white/20 p-8 rounded-2xl w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 bg-blue-950 shadow-soft text-gold-500 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Lock size={24} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Acceso Seguro</h1>
-          <p className="text-sm text-slate-500 mt-1">Ingrese sus credenciales operativas</p>
+          <h1 className="text-2xl font-bold font-serif text-blue-950 tracking-tight">Acceso Seguro</h1>
+          <p className="text-sm text-gray-600 mt-1">Ingrese sus credenciales operativas</p>
         </div>
 
         {error && (
@@ -65,11 +59,11 @@ export default function LoginView() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2" htmlFor="username">
+            <label className="block text-xs font-bold text-blue-950 uppercase tracking-wide mb-2" htmlFor="username">
               Usuario
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                 <User size={18} />
               </div>
               <input
@@ -77,7 +71,7 @@ export default function LoginView() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-colors"
+                className="w-full pl-10 pr-3 py-2.5 bg-white/50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
                 placeholder="Identificador único"
                 required
               />
@@ -85,11 +79,11 @@ export default function LoginView() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2" htmlFor="password">
+            <label className="block text-xs font-bold text-blue-950 uppercase tracking-wide mb-2" htmlFor="password">
               Contraseña
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                 <Lock size={18} />
               </div>
               <input
@@ -97,7 +91,7 @@ export default function LoginView() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900 outline-none transition-colors"
+                className="w-full pl-10 pr-3 py-2.5 bg-white/50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
                 placeholder="••••••••"
                 required
               />
@@ -107,7 +101,7 @@ export default function LoginView() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-2.5 rounded-lg text-sm transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+            className="w-full bg-blue-900 hover:bg-blue-800 shadow-soft text-white font-medium py-2.5 rounded-lg text-sm transition-transform active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-2"
           >
             {loading ? 'Verificando...' : 'Autenticar'}
           </button>
