@@ -1,7 +1,29 @@
-import { Outlet, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Settings, LogOut } from 'lucide-react';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Settings, LogOut, ChevronDown, User } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+import { useState, useRef, useEffect } from 'react';
 
 export default function AdminLayout() {
+  const { logout } = useAuthStore();
+  const navigate = useNavigate();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
@@ -23,18 +45,38 @@ export default function AdminLayout() {
             <span>Configuración</span>
           </Link>
         </nav>
-        <div className="p-4 border-t border-slate-800">
-          <button className="flex items-center gap-3 px-3 py-2 w-full rounded-lg hover:bg-red-900/50 text-red-400 transition-colors">
-            <LogOut size={20} />
-            <span>Cerrar Sesión</span>
-          </button>
-        </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center px-8 shadow-sm">
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-10">
           <h2 className="text-lg font-medium text-gray-800">Panel de Administración</h2>
+          
+          {/* User Profile Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button 
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            >
+              <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-600">
+                <User size={16} />
+              </div>
+              <span className="text-sm font-medium text-slate-700 hidden sm:block">Admin</span>
+              <ChevronDown size={16} className="text-slate-400" />
+            </button>
+
+            {dropdownOpen && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-2 animate-in fade-in slide-in-from-top-2">
+                <button 
+                  onClick={handleLogout}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 flex items-center gap-2 transition-colors"
+                >
+                  <LogOut size={16} />
+                  Cerrar sesión
+                </button>
+              </div>
+            )}
+          </div>
         </header>
         <div className="p-8 flex-1 overflow-auto">
           <Outlet />
