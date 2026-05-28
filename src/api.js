@@ -75,7 +75,19 @@ function asMovimientosList(payload) {
 function asCatalogList(payload) {
   if (Array.isArray(payload)) return payload;
   if (payload == null || typeof payload !== 'object') return [];
-  const keys = ['data', 'items', 'result', 'catalogo', 'catalogoServicios', 'catalogoTipos', 'servicios', 'tipos'];
+  const keys = [
+    'data',
+    'items',
+    'result',
+    'catalogo',
+    'catalogoServicios',
+    'catalogoTipos',
+    'servicios',
+    'serviciosPublicos',
+    'tipos',
+    'tiposCuenta',
+    'lista'
+  ];
   for (const k of keys) {
     const v = payload[k];
     if (Array.isArray(v)) return v;
@@ -340,7 +352,9 @@ export const BancoAPI = {
       '/api/Servicios',
       '/api/Pagos/servicios',
       '/api/Pagos/catalogo-servicios',
-      '/api/ServiciosPublicos'
+      '/api/ServiciosPublicos',
+      '/api/Pagos/servicios-publicos',
+      '/api/Servicios/externos'
     ]);
     return asCatalogList(raw);
   },

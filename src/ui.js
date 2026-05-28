@@ -215,15 +215,42 @@ function selectBestValue(item, keys) {
 }
 
 function normalizeCatalogItem(item) {
-  if (item == null || typeof item !== 'object') return null;
-  const value = selectBestValue(item, ['id', 'codigo', 'idServicio', 'idTipoCuenta', 'tipo', 'value']);
-  const label = selectBestValue(item, ['nombre', 'descripcion', 'label', 'titulo', 'tipoCuenta', 'servicio']);
+  if (item == null) return null;
+  if (typeof item === 'string' || typeof item === 'number') {
+    return { value: String(item), label: String(item) };
+  }
+  if (typeof item !== 'object') return null;
+  const value = selectBestValue(item, [
+    'id',
+    'codigo',
+    'idServicio',
+    'idServicioPublico',
+    'idServicioPago',
+    'idTipoServicio',
+    'idTipoCuenta',
+    'tipo',
+    'tipoServicio',
+    'value'
+  ]);
+  const label = selectBestValue(item, [
+    'nombre',
+    'nombreServicio',
+    'descripcion',
+    'descripcionServicio',
+    'label',
+    'titulo',
+    'tipoCuenta',
+    'servicio',
+    'servicioPublico',
+    'tipoServicio'
+  ]);
   if (value == null || label == null) return null;
   return { value: String(value), label: String(label) };
 }
 
 function renderCatalogSelect(selectEl, items, emptyLabel) {
   if (!selectEl) return;
+  const current = selectEl.value;
   const normalized = (Array.isArray(items) ? items : []).map(normalizeCatalogItem).filter(Boolean);
 
   selectEl.innerHTML = '';
@@ -242,6 +269,10 @@ function renderCatalogSelect(selectEl, items, emptyLabel) {
     opt.textContent = item.label;
     selectEl.appendChild(opt);
   });
+
+  if (current && normalized.some((item) => item.value === current)) {
+    selectEl.value = current;
+  }
 }
 
 export function renderServiciosCatalogo(servicios) {

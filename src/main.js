@@ -221,6 +221,10 @@ function handleRouting() {
   UI.hideLoginScreen();
   UI.switchTab(route);
 
+  if (route === 'pagos' || route === 'clientes') {
+    cargarCatalogos();
+  }
+
   if (route === 'bitacora' && state.role === 'admin') {
     const input = document.getElementById('bitacora-cuenta-id');
     const idCuenta = getBitacoraAccountId();
