@@ -257,6 +257,9 @@ document.addEventListener('DOMContentLoaded', () => {
     UI.hideLoginScreen();
     UI.setupTabs(state.role);
       setHeaderUserBadge(state.role === 'admin' ? 'Administrador Core' : `Usuario: ${savedUser}`);
+
+    cargarCatalogos();
+    cargarConfigUI();
     
     if (state.role === 'admin') {
       cargarDiagnosticoCore();
@@ -295,6 +298,9 @@ document.addEventListener('DOMContentLoaded', () => {
       UI.hideLoginScreen();
       UI.setupTabs(state.role);
       setHeaderUserBadge(state.role === 'admin' ? 'Administrador Core' : `Usuario: ${credencial}`);
+
+      await cargarCatalogos();
+      await cargarConfigUI();
       
       UI.showToast(`Bienvenido al sistema transaccional, ${credencial}`, 'success');
 
