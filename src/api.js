@@ -84,8 +84,14 @@ function asCatalogList(payload) {
 }
 
 // Auxiliar centralizado para realizar las peticiones HTTP
+function buildUrl(path) {
+  const raw = String(path || '');
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `${API_URL}${raw}`;
+}
+
 async function request(path, options = {}) {
-  const url = `${API_URL}${path}`;
+  const url = buildUrl(path);
   const method = (options.method || 'GET').toUpperCase();
 
   // Solo Content-Type JSON cuando hay cuerpo (evita GET con body-type que algunos proxies/API rechazan)
@@ -121,7 +127,10 @@ async function request(path, options = {}) {
           if (errText) errorMsg = errText;
         } catch (_) {}
       }
-      throw new Error(errorMsg);
+      const err = new Error(errorMsg);
+      err.status = response.status;
+      err.url = url;
+      throw err;
     }
 
     // Algunas peticiones de éxito no devuelven contenido (204) o devuelven texto plano
@@ -145,10 +154,30 @@ export const BancoAPI = {
       [AUTH_LOGIN_PASSWORD_FIELD]: password
     };
 
-    const response = await request(AUTH_LOGIN_PATH, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    });
+    const tryLogin = async (path, method, body) => {
+      return await request(path, {
+        method,
+        body
+      });
+    };
+
+    let response;
+    try {
+      response = await tryLogin(AUTH_LOGIN_PATH, 'POST', JSON.stringify(payload));
+    } catch (error) {
+      const status = error?.status;
+      if (status === 405) {
+        const pathWithSlash = AUTH_LOGIN_PATH.endsWith('/') ? AUTH_LOGIN_PATH : `${AUTH_LOGIN_PATH}/`;
+        try {
+          response = await tryLogin(pathWithSlash, 'POST', JSON.stringify(payload));
+        } catch (secondError) {
+          const qs = new URLSearchParams(payload).toString();
+          response = await tryLogin(`${AUTH_LOGIN_PATH}?${qs}`, 'GET');
+        }
+      } else {
+        throw error;
+      }
+    }
     
     // Si el login fue exitoso y devolvió datos (por ejemplo, un token)
     if (response && response.token) {
