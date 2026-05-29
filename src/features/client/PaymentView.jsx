@@ -128,6 +128,11 @@ export default function PaymentView() {
       setLoading(false);
       return;
     }
+    if (selectedCuentaObj.saldo < parsedMonto) {
+      setError(`Fondos insuficientes. El saldo disponible en tu cuenta es de Q${Number(selectedCuentaObj.saldo).toFixed(2)}, pero el monto del servicio a pagar es de Q${parsedMonto.toFixed(2)}.`);
+      setLoading(false);
+      return;
+    }
 
     try {
       await api.post('/api/Pagos/ejecutar', {
@@ -327,6 +332,19 @@ export default function PaymentView() {
                     )}
                   </div>
                 )}
+
+                {(() => {
+                  const selectedCuentaObj = cuentas.find(c => String(c.idCuenta) === idCuentaOrigen);
+                  const parsedMonto = parseFloat(monto);
+                  if (selectedCuentaObj && !isNaN(parsedMonto) && parsedMonto > 0 && selectedCuentaObj.saldo < parsedMonto) {
+                    return (
+                      <div className="md:col-span-2 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-bold animate-in fade-in duration-200">
+                        ⚠️ Fondos insuficientes en la cuenta seleccionada. Saldo disponible: Q {Number(selectedCuentaObj.saldo).toFixed(2)}.
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
@@ -364,7 +382,16 @@ export default function PaymentView() {
 
               <button
                 type="submit"
-                disabled={loading || deudaConsultada === null || (deudaConsultada <= 0 && !esPrepago)}
+                disabled={
+                  loading || 
+                  deudaConsultada === null || 
+                  (deudaConsultada <= 0 && !esPrepago) ||
+                  (() => {
+                    const selectedCuentaObj = cuentas.find(c => String(c.idCuenta) === idCuentaOrigen);
+                    const parsedMonto = parseFloat(monto);
+                    return selectedCuentaObj && !isNaN(parsedMonto) && selectedCuentaObj.saldo < parsedMonto;
+                  })()
+                }
                 className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4 shadow-md"
               >
                 {loading ? (
