@@ -8,7 +8,7 @@ export default function PaymentView() {
   const [cuentas, setCuentas] = useState([]);
   const [idCuentaOrigen, setIdCuentaOrigen] = useState('');
   
-  const [tipoServicio, setTipoServicio] = useState('TELEFONO');
+  const [tipoServicio, setTipoServicio] = useState('2');
   const [identificador, setIdentificador] = useState('');
   const [monto, setMonto] = useState('');
   const [pin, setPin] = useState('');
@@ -51,7 +51,7 @@ export default function PaymentView() {
       await api.post('/api/Pagos/ejecutar', {
         idCuenta: parseInt(idCuentaOrigen, 10),
         pin: pin,
-        tipoServicio: tipoServicio,
+        tipoServicio: parseInt(tipoServicio, 10),
         identificador: identificador,
         monto: parseFloat(monto),
         referenciaCliente: referenciaCliente || null
@@ -71,9 +71,9 @@ export default function PaymentView() {
 
   const renderIcon = () => {
     switch (tipoServicio) {
-      case 'TELEFONO': return <Phone size={20} className="text-blue-900" />;
-      case 'LUZ': return <Zap size={20} className="text-yellow-500" />;
-      case 'UNIVERSIDAD': return <CreditCard size={20} className="text-blue-900" />;
+      case '2': return <Phone size={20} className="text-blue-900" />;
+      case '3': return <Zap size={20} className="text-yellow-500" />;
+      case '1': return <CreditCard size={20} className="text-blue-900" />;
       default: return <CreditCard size={20} className="text-blue-900" />;
     }
   };
@@ -154,9 +154,9 @@ export default function PaymentView() {
                   onChange={(e) => setTipoServicio(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
                 >
-                  <option value="TELEFONO">Telefonía (Celular)</option>
-                  <option value="LUZ">Energía Eléctrica (Contador)</option>
-                  <option value="UNIVERSIDAD">Universidad (Pago de colegiatura)</option>
+                  <option value="2">Telefonía (Celular)</option>
+                  <option value="3">Energía Eléctrica (Contador)</option>
+                  <option value="1">Universidad (Pago de colegiatura)</option>
                 </select>
               </div>
             </div>

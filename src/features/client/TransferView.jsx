@@ -9,6 +9,7 @@ export default function TransferView() {
   const [idCuentaOrigen, setIdCuentaOrigen] = useState('');
   const [destino, setDestino] = useState('');
   const [monto, setMonto] = useState('');
+  const [descripcion, setDescripcion] = useState('');
   
   const [loadingCuentas, setLoadingCuentas] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -43,14 +44,16 @@ export default function TransferView() {
     setLoading(true);
 
     try {
-      await api.post('/api/Operaciones/transferencia', {
+      await api.post('/api/Operaciones/transferir', {
         idCuentaOrigen: parseInt(idCuentaOrigen, 10),
         idCuentaDestino: parseInt(destino, 10),
-        monto: parseFloat(monto)
+        monto: parseFloat(monto),
+        descripcion: descripcion || 'Transferencia web'
       });
       setSuccess(true);
       setDestino('');
       setMonto('');
+      setDescripcion('');
     } catch (err) {
       setError(err.response?.data?.message || 'Hubo un error al procesar la transferencia.');
     } finally {
@@ -133,6 +136,19 @@ export default function TransferView() {
               onChange={(e) => setMonto(e.target.value)}
               placeholder="0.00"
               className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-bold text-lg text-slate-900 focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+              Descripción / Referencia
+            </label>
+            <input
+              type="text"
+              value={descripcion}
+              onChange={(e) => setDescripcion(e.target.value)}
+              placeholder="Ej. Pago de alquiler (Opcional)"
+              className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
             />
           </div>
 
