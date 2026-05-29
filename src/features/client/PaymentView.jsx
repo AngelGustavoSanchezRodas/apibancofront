@@ -13,6 +13,12 @@ export default function PaymentView() {
   const [monto, setMonto] = useState('');
   const [pin, setPin] = useState('');
   const [referenciaCliente, setReferenciaCliente] = useState('');
+
+  // Deuda states
+  const [deudaConsultada, setDeudaConsultada] = useState(null);
+  const [loadingDeuda, setLoadingDeuda] = useState(false);
+  const [deudaError, setDeudaError] = useState(null);
+  const [esPrepago, setEsPrepago] = useState(false);
   
   const [loadingCuentas, setLoadingCuentas] = useState(false);
   
@@ -41,6 +47,32 @@ export default function PaymentView() {
     }
   }, [idCliente]);
 
+  const handleConsultarDeuda = async () => {
+    if (!identificador || !identificador.trim()) return;
+    setLoadingDeuda(true);
+    setDeudaError(null);
+    setDeudaConsultada(null);
+    setEsPrepago(false);
+    setError(null);
+    try {
+      const response = await api.get(`/api/Pagos/consultar-deuda/${tipoServicio}/${identificador.trim()}`);
+      const deuda = parseFloat(response.data);
+      setDeudaConsultada(deuda);
+      if (deuda > 0) {
+        setMonto(String(deuda));
+      } else if (tipoServicio === '2') {
+        setEsPrepago(true);
+        setMonto('');
+      } else {
+        setMonto('0.00');
+      }
+    } catch (err) {
+      setDeudaError(err.response?.data?.mensaje || err.response?.data?.error || 'No se pudo consultar la deuda para este identificador.');
+    } finally {
+      setLoadingDeuda(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -58,8 +90,20 @@ export default function PaymentView() {
       setError('El tipo de servicio es inválido o no está seleccionado.');
       return;
     }
+    if (deudaConsultada === null) {
+      setError('Debe consultar la deuda del identificador antes de realizar el pago.');
+      return;
+    }
     if (!monto || isNaN(parsedMonto) || parsedMonto <= 0) {
       setError('El monto del pago debe ser mayor a cero.');
+      return;
+    }
+    if (!esPrepago && parsedMonto !== deudaConsultada) {
+      setError(`El monto del pago debe coincidir exactamente con la deuda de Q${deudaConsultada.toFixed(2)}.`);
+      return;
+    }
+    if (!esPrepago && deudaConsultada <= 0) {
+      setError('No hay saldo o deuda pendiente para pagar en este servicio.');
       return;
     }
     if (!identificador || !identificador.trim()) {
@@ -102,6 +146,8 @@ export default function PaymentView() {
       setMonto('');
       setPin('');
       setReferenciaCliente('');
+      setDeudaConsultada(null);
+      setEsPrepago(false);
     } catch (err) {
       setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error de conexión con el servidor.');
     } finally {
@@ -211,7 +257,12 @@ export default function PaymentView() {
                     </div>
                     <select
                       value={tipoServicio}
-                      onChange={(e) => setTipoServicio(e.target.value)}
+                      onChange={(e) => {
+                        setTipoServicio(e.target.value);
+                        setDeudaConsultada(null);
+                        setMonto('');
+                        setDeudaError(null);
+                      }}
                       className="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
                     >
                       <option value="2">Telefonía (Celular)</option>
@@ -225,15 +276,57 @@ export default function PaymentView() {
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
                     Identificador / Contrato
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={identificador}
-                    onChange={(e) => setIdentificador(e.target.value)}
-                    placeholder="Ej. 12345678"
-                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      required
+                      value={identificador}
+                      onChange={(e) => {
+                        setIdentificador(e.target.value);
+                        setDeudaConsultada(null);
+                        setMonto('');
+                        setDeudaError(null);
+                      }}
+                      placeholder={
+                        tipoServicio === '2' ? 'Ej. 82542114' :
+                        tipoServicio === '3' ? 'Ej. NIS contador' : 'Ej. Carnet U'
+                      }
+                      className="flex-1 px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleConsultarDeuda}
+                      disabled={loadingDeuda || !identificador.trim()}
+                      className="px-4 py-3 bg-blue-900 hover:bg-blue-800 text-white rounded-xl font-bold text-xs transition-colors disabled:opacity-50 flex items-center justify-center shrink-0 min-w-[90px]"
+                    >
+                      {loadingDeuda ? 'Buscando...' : 'Consultar'}
+                    </button>
+                  </div>
                 </div>
+
+                {deudaError && (
+                  <div className="md:col-span-2 p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs font-semibold animate-in fade-in duration-200">
+                    {deudaError}
+                  </div>
+                )}
+
+                {deudaConsultada !== null && (
+                  <div className="md:col-span-2 p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs font-medium animate-in fade-in duration-200">
+                    {deudaConsultada > 0 ? (
+                      <span>
+                        Deuda pendiente encontrada: <strong className="text-slate-900 text-sm">Q {deudaConsultada.toFixed(2)}</strong>. El monto a debitar se ha fijado automáticamente.
+                      </span>
+                    ) : esPrepago ? (
+                      <span>
+                        Servicio prepago (recarga) detectado. Ingrese el monto que desea recargar a continuación.
+                      </span>
+                    ) : (
+                      <span className="text-emerald-700 font-bold">
+                        ✓ No se encontraron saldos pendientes para este identificador.
+                      </span>
+                    )}
+                  </div>
+                )}
                 
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
@@ -260,18 +353,19 @@ export default function PaymentView() {
                     required
                     min="0.01"
                     step="0.01"
+                    disabled={!esPrepago}
                     value={monto}
                     onChange={(e) => setMonto(e.target.value)}
                     placeholder="0.00"
-                    className="w-48 px-2 py-2 text-center bg-transparent border-b-2 border-slate-300 font-black text-5xl text-slate-900 focus:border-blue-700 outline-none transition-colors"
+                    className="w-48 px-2 py-2 text-center bg-transparent border-b-2 border-slate-300 font-black text-5xl text-slate-900 focus:border-blue-700 outline-none transition-colors disabled:opacity-75 disabled:cursor-not-allowed"
                   />
                 </div>
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4 shadow-md"
+                disabled={loading || deudaConsultada === null || (deudaConsultada <= 0 && !esPrepago)}
+                className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4 shadow-md"
               >
                 {loading ? (
                   <span>Procesando pago...</span>
