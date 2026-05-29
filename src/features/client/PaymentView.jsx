@@ -73,14 +73,28 @@ export default function PaymentView() {
 
     setLoading(true);
 
+    const selectedCuentaObj = cuentas.find(c => String(c.idCuenta) === idCuentaOrigen);
+    if (!selectedCuentaObj) {
+      setError('La cuenta seleccionada no es válida.');
+      setLoading(false);
+      return;
+    }
+    if (!selectedCuentaObj.numeroTarjeta) {
+      setError('Esta cuenta no tiene una tarjeta de débito asociada. Solicita la asociación de una tarjeta en el panel del administrador para poder realizar pagos de servicios.');
+      setLoading(false);
+      return;
+    }
+
     try {
       await api.post('/api/Pagos/ejecutar', {
-        idCuenta: parsedCuenta,
+        numeroTarjeta: selectedCuentaObj.numeroTarjeta,
         pin: pin,
         tipoServicio: parsedTipoServicio,
         identificador: identificador,
         monto: parsedMonto,
-        referenciaCliente: referenciaCliente || null
+        referenciaCliente: referenciaCliente || null,
+        mesVencimiento: selectedCuentaObj.mesVencimiento,
+        anioVencimiento: selectedCuentaObj.anioVencimiento
       });
       
       setSuccess(true);
