@@ -17,6 +17,11 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
   const [email, setEmail] = useState('');
   const [idTipoCuenta, setIdTipoCuenta] = useState('1');
 
+  // Cuenta state
+  const [cuenta, setCuenta] = useState(null);
+  const [loadingCuenta, setLoadingCuenta] = useState(false);
+  const [montoDeposito, setMontoDeposito] = useState('');
+
   // Kardex state
   const [kardex, setKardex] = useState([]);
   const [kardexLoading, setKardexLoading] = useState(false);
@@ -25,7 +30,25 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
 
   // Sync state when client changes
   useEffect(() => {
-    if (client) {
+    const fetchCuenta = async () => {
+      try {
+        setLoadingCuenta(true);
+        setError(null);
+        const response = await api.get(`/api/Cuentahabientes/${client.idCliente}/cuentas`);
+        const cuentasData = Array.isArray(response.data) ? response.data : response.data?.valor || [];
+        if (cuentasData.length > 0) {
+          setCuenta(cuentasData[0]);
+        } else {
+          setCuenta(null);
+        }
+      } catch (err) {
+        setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al cargar la cuenta del cliente.');
+      } finally {
+        setLoadingCuenta(false);
+      }
+    };
+
+    if (client && isOpen) {
       setDpi(client.dpi || '');
       setNit(client.nit || '');
       setNombre(client.nombre || '');
@@ -33,6 +56,7 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
       setTelefono(client.telefono || '');
       setEmail(client.email || '');
       setIdTipoCuenta(client.idTipoCuenta ? String(client.idTipoCuenta) : '1');
+      fetchCuenta();
     } else {
       setDpi('');
       setNit('');
@@ -41,29 +65,31 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
       setTelefono('');
       setEmail('');
       setIdTipoCuenta('1');
+      setCuenta(null);
     }
     setError(null);
     setSuccessMsg('');
+    setMontoDeposito('');
     setActiveTab('perfil');
   }, [client, isOpen]);
 
   // Auto-fetch Kardex if tab changes to 'kardex'
   useEffect(() => {
-    if (activeTab === 'kardex' && client && client.idCuenta) {
+    if (activeTab === 'kardex' && cuenta?.idCuenta) {
       const fetchKardex = async () => {
         try {
           setKardexLoading(true);
-          const response = await api.get(`/api/Bitacora/kardex/${client.idCuenta}`);
+          const response = await api.get(`/api/Bitacora/kardex/${cuenta.idCuenta}`);
           setKardex(response.data || []);
         } catch (err) {
-          setError('Error al obtener el kardex de la cuenta.');
+          setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al obtener el kardex de la cuenta.');
         } finally {
           setKardexLoading(false);
         }
       };
       fetchKardex();
     }
-  }, [activeTab, client]);
+  }, [activeTab, cuenta]);
 
   if (!isOpen) return null;
 
@@ -84,7 +110,37 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
       setSuccessMsg('Perfil creado exitosamente.');
       if (onSuccess) onSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al crear perfil.');
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al crear perfil.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleActivateAccount = async (e) => {
+    e.preventDefault();
+    const parsedMonto = parseFloat(montoDeposito);
+    if (isNaN(parsedMonto) || parsedMonto <= 0) {
+      setError('El monto de depósito debe ser mayor a cero.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setSuccessMsg('');
+    try {
+      await api.post('/api/Operaciones/activar-cuenta', {
+        idCuenta: cuenta.idCuenta,
+        montoDeposito: parsedMonto
+      });
+      setSuccessMsg('Cuenta activada exitosamente con depósito inicial.');
+      setCuenta(prev => ({
+        ...prev,
+        idEstado: 1,
+        saldo: parsedMonto
+      }));
+      setMontoDeposito('');
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al activar la cuenta.');
     } finally {
       setLoading(false);
     }
@@ -94,11 +150,11 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
     setLoading(true);
     setError(null);
     try {
-      await api.post('/api/Cuentahabientes/tarjeta', { idCuenta: client.idCuenta });
+      await api.post('/api/Cuentahabientes/tarjeta', { idCuenta: cuenta.idCuenta });
       setSuccessMsg('Tarjeta asociada exitosamente.');
       if (onSuccess) onSuccess();
     } catch (err) {
-      setError(err.response?.data?.message || 'Error al asociar tarjeta.');
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al asociar tarjeta.');
     } finally {
       setLoading(false);
     }
@@ -264,20 +320,58 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
           {/* Tab 2: Operativa */}
           {!isCreateMode && activeTab === 'operativa' && (
             <div className="space-y-6">
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                <h3 className="text-sm font-bold text-slate-900 mb-2">Asociar Nueva Tarjeta</h3>
-                <p className="text-xs text-slate-500 mb-4">
-                  Genera una tarjeta de débito vinculada a la cuenta #{client?.idCuenta} del cliente.
-                </p>
-                <button 
-                  onClick={handleAssociateCard}
-                  disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex justify-center items-center gap-2"
-                >
-                  <CreditCard size={16} />
-                  {loading ? 'Procesando...' : 'Asociar Tarjeta'}
-                </button>
-              </div>
+              {loadingCuenta ? (
+                <div className="text-center text-slate-500 py-4">Cargando datos de la cuenta...</div>
+              ) : !cuenta ? (
+                <div className="text-center text-slate-500 py-4">No se encontró una cuenta activa o pendiente para este cliente.</div>
+              ) : cuenta.idEstado === 3 ? (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <h3 className="text-sm font-bold text-slate-900 mb-2">Activar Cuenta</h3>
+                  <p className="text-xs text-slate-500 mb-4">
+                    La cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) está inactiva. Realiza un depósito inicial para activarla.
+                  </p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Monto de Depósito Inicial (Q)</label>
+                      <input 
+                        type="number" 
+                        min="0.01"
+                        step="0.01"
+                        value={montoDeposito}
+                        onChange={(e) => setMontoDeposito(e.target.value)}
+                        placeholder="Ej. 100.00"
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none font-medium"
+                      />
+                    </div>
+                    <button 
+                      onClick={handleActivateAccount}
+                      disabled={loading}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex justify-center items-center gap-2"
+                    >
+                      Activar Cuenta
+                    </button>
+                  </div>
+                </div>
+              ) : cuenta.idEstado === 1 ? (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <h3 className="text-sm font-bold text-slate-900 mb-2">Asociar Nueva Tarjeta</h3>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Genera una tarjeta de débito vinculada a la cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) del cliente.
+                  </p>
+                  <button 
+                    onClick={handleAssociateCard}
+                    disabled={loading}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex justify-center items-center gap-2"
+                  >
+                    <CreditCard size={16} />
+                    {loading ? 'Procesando...' : 'Asociar Tarjeta'}
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-600 text-sm">
+                  La cuenta se encuentra en un estado no editable (Estado ID: {cuenta.idEstado}).
+                </div>
+              )}
             </div>
           )}
 
