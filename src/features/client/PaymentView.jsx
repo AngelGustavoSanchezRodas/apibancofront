@@ -5,10 +5,12 @@ import { CreditCard, Zap, Droplets, Phone } from 'lucide-react';
 
 export default function PaymentView() {
   const { userId } = useAuthStore();
-  const [empresaId, setEmpresaId] = useState('1'); 
-  const [identificadorCliente, setIdentificadorCliente] = useState('');
-  const [montoTotal, setMontoTotal] = useState('');
-  const [pin, setPin] = useState(''); // Opcional, pero se mantiene si es por seguridad
+  const [numeroTarjeta, setNumeroTarjeta] = useState('');
+  const [tipoServicio, setTipoServicio] = useState('1'); 
+  const [identificador, setIdentificador] = useState('');
+  const [monto, setMonto] = useState('');
+  const [pin, setPin] = useState('');
+  const [referenciaCliente, setReferenciaCliente] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -22,17 +24,20 @@ export default function PaymentView() {
 
     try {
       await api.post('/api/Pagos/ejecutar', {
-        idCuenta: parseInt(userId, 10),
-        idEmpresa: parseInt(empresaId, 10),
-        identificadorCliente: identificadorCliente,
-        montoTotal: parseFloat(montoTotal),
-        pinSeguridad: pin
+        numeroTarjeta: numeroTarjeta,
+        pin: pin,
+        tipoServicio: parseInt(tipoServicio, 10),
+        identificador: identificador,
+        monto: parseFloat(monto),
+        referenciaCliente: referenciaCliente || null
       });
       
       setSuccess(true);
-      setIdentificadorCliente('');
-      setMontoTotal('');
+      setIdentificador('');
+      setMonto('');
       setPin('');
+      setNumeroTarjeta('');
+      setReferenciaCliente('');
     } catch (err) {
       setError(err.response?.data?.message || 'Ocurrió un error al procesar el pago.');
     } finally {
@@ -41,7 +46,7 @@ export default function PaymentView() {
   };
 
   const renderIcon = () => {
-    switch (empresaId) {
+    switch (tipoServicio) {
       case '1': return <Phone size={20} className="text-blue-900" />;
       case '2': return <Zap size={20} className="text-yellow-500" />;
       case '3': return <Droplets size={20} className="text-cyan-500" />;
@@ -76,6 +81,34 @@ export default function PaymentView() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                Número de Tarjeta
+              </label>
+              <input
+                type="text"
+                required
+                value={numeroTarjeta}
+                onChange={(e) => setNumeroTarjeta(e.target.value)}
+                placeholder="0000 0000 0000 0000"
+                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                PIN de Seguridad
+              </label>
+              <input
+                type="password"
+                required
+                value={pin}
+                onChange={(e) => setPin(e.target.value)}
+                placeholder="••••"
+                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
                 Servicio a Pagar
               </label>
               <div className="relative">
@@ -83,8 +116,8 @@ export default function PaymentView() {
                   {renderIcon()}
                 </div>
                 <select
-                  value={empresaId}
-                  onChange={(e) => setEmpresaId(e.target.value)}
+                  value={tipoServicio}
+                  onChange={(e) => setTipoServicio(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
                 >
                   <option value="1">Telefonía (Celular)</option>
@@ -101,9 +134,22 @@ export default function PaymentView() {
               <input
                 type="text"
                 required
-                value={identificadorCliente}
-                onChange={(e) => setIdentificadorCliente(e.target.value)}
+                value={identificador}
+                onChange={(e) => setIdentificador(e.target.value)}
                 placeholder="Ej. 12345678"
+                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+              />
+            </div>
+            
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                Referencia (Opcional)
+              </label>
+              <input
+                type="text"
+                value={referenciaCliente}
+                onChange={(e) => setReferenciaCliente(e.target.value)}
+                placeholder="Ej. Pago de luz de la casa"
                 className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
               />
             </div>
@@ -120,8 +166,8 @@ export default function PaymentView() {
                 required
                 min="0.01"
                 step="0.01"
-                value={montoTotal}
-                onChange={(e) => setMontoTotal(e.target.value)}
+                value={monto}
+                onChange={(e) => setMonto(e.target.value)}
                 placeholder="0.00"
                 className="w-48 px-2 py-2 text-center bg-transparent border-b-2 border-slate-300 font-black text-5xl text-slate-900 focus:border-blue-700 outline-none transition-colors"
               />

@@ -13,6 +13,9 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
   const [nit, setNit] = useState('');
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [email, setEmail] = useState('');
+  const [idTipoCuenta, setIdTipoCuenta] = useState('1');
 
   // Kardex state
   const [kardex, setKardex] = useState([]);
@@ -27,11 +30,17 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
       setNit(client.nit || '');
       setNombre(client.nombre || '');
       setApellido(client.apellido || '');
+      setTelefono(client.telefono || '');
+      setEmail(client.email || '');
+      setIdTipoCuenta(client.idTipoCuenta ? String(client.idTipoCuenta) : '1');
     } else {
       setDpi('');
       setNit('');
       setNombre('');
       setApellido('');
+      setTelefono('');
+      setEmail('');
+      setIdTipoCuenta('1');
     }
     setError(null);
     setSuccessMsg('');
@@ -63,7 +72,15 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
     setLoading(true);
     setError(null);
     try {
-      await api.post('/api/Cuentahabientes/perfil', { dpi, nit, nombre, apellido });
+      await api.post('/api/Cuentahabientes/perfil', { 
+        dpi, 
+        nit, 
+        nombre, 
+        apellido,
+        telefono: telefono || null,
+        email: email || null,
+        idTipoCuenta: parseInt(idTipoCuenta, 10)
+      });
       setSuccessMsg('Perfil creado exitosamente.');
       if (onSuccess) onSuccess();
     } catch (err) {
@@ -197,6 +214,40 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
                   className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none disabled:opacity-70 disabled:cursor-not-allowed" 
                 />
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Teléfono</label>
+                <input 
+                  type="tel" 
+                  value={telefono} 
+                  onChange={(e) => setTelefono(e.target.value)} 
+                  disabled={!isCreateMode}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none disabled:opacity-70 disabled:cursor-not-allowed" 
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Email</label>
+                <input 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  disabled={!isCreateMode}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none disabled:opacity-70 disabled:cursor-not-allowed" 
+                />
+              </div>
+              {isCreateMode && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo de Cuenta</label>
+                  <select 
+                    value={idTipoCuenta} 
+                    onChange={(e) => setIdTipoCuenta(e.target.value)} 
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none cursor-pointer" 
+                  >
+                    <option value="1">Monetaria</option>
+                    <option value="2">Ahorro</option>
+                  </select>
+                </div>
+              )}
 
               {isCreateMode && (
                 <button 

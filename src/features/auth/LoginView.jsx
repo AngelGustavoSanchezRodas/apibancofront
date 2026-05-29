@@ -5,7 +5,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Lock, User } from 'lucide-react';
 
 export default function LoginView() {
-  const [username, setUsername] = useState('');
+  const [credencial, setCredencial] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ export default function LoginView() {
     setLoading(true);
 
     try {
-      const response = await api.post('/api/Auth/login', { username, password });
+      const response = await api.post('/api/Auth/login', { credencial, password });
       const { token, role, userId } = response.data;
       
       login(token, role, userId);
@@ -59,7 +59,7 @@ export default function LoginView() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-xs font-bold text-blue-950 uppercase tracking-wide mb-2" htmlFor="username">
+            <label className="block text-xs font-bold text-blue-950 uppercase tracking-wide mb-2" htmlFor="credencial">
               Usuario
             </label>
             <div className="relative">
@@ -67,10 +67,10 @@ export default function LoginView() {
                 <User size={18} />
               </div>
               <input
-                id="username"
+                id="credencial"
                 type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={credencial}
+                onChange={(e) => setCredencial(e.target.value)}
                 className="w-full pl-10 pr-3 py-2.5 bg-white/50 border border-gray-200 rounded-lg text-sm focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
                 placeholder="Identificador único"
                 required
