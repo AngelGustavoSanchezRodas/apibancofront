@@ -2,8 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 // Usamos import.meta.env para Vite. 
-// Si la variable no existe, el fallback es nuestra URL de producción.
-const API_URL = import.meta.env.VITE_API_URL || 'https://bancocentroamericano.azurewebsites.net';
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 const api = axios.create({
   baseURL: API_URL,
