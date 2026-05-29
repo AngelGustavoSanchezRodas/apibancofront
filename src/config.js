@@ -1,7 +1,7 @@
 // src/config.js
 
 // 1. Tomar puramente la variable de entorno
-const RAW_API_URL = import.meta.env.VITE_API_URL || '';
+const RAW_API_URL = import.meta.env.VITE_API_URL;
 
 // 2. Principio Fail-Fast: Si está vacío en producción, lo reportamos inmediatamente
 if (!RAW_API_URL) {
