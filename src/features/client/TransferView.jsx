@@ -120,7 +120,7 @@ export default function TransferView() {
               ) : (
                 cuentas.map(c => (
                   <option key={c.idCuenta} value={c.idCuenta}>
-                    Cuenta {c.noCuenta} - Q{Number(c.saldoActual).toFixed(2)}
+                    Cuenta {c.noCuenta} - Q{Number(c.saldo).toFixed(2)}
                   </option>
                 ))
               )}
