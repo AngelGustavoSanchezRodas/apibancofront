@@ -22,7 +22,7 @@ export default function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
 
         {/* Protected Admin Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ADMINISTRADOR']} />}>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<ClientsView />} />
             <Route path="clients" element={<ClientsView />} />
@@ -30,7 +30,7 @@ export default function App() {
         </Route>
 
         {/* Protected Client Routes */}
-        <Route element={<ProtectedRoute allowedRoles={['CLIENTE']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['CLIENTE', 'USUARIO']} />}>
           <Route path="/client" element={<ClientLayout />}>
             <Route index element={<DashboardView />} />
             <Route path="transfer" element={<TransferView />} />
