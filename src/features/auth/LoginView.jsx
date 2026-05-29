@@ -20,9 +20,9 @@ export default function LoginView() {
 
     try {
       const response = await api.post('/api/Auth/login', { credencial, password });
-      const { token, role, userId } = response.data;
+      const { token, role, idCliente } = response.data;
       
-      login(token, role, userId);
+      login(token, role, idCliente);
 
       if (role === 'ADMIN') {
         navigate('/admin', { replace: true });

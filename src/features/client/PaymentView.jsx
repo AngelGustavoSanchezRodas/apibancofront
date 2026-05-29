@@ -1,20 +1,45 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { CreditCard, Zap, Droplets, Phone } from 'lucide-react';
 
 export default function PaymentView() {
-  const { userId } = useAuthStore();
-  const [numeroTarjeta, setNumeroTarjeta] = useState('');
-  const [tipoServicio, setTipoServicio] = useState('1'); 
+  const { idCliente } = useAuthStore();
+  const [cuentas, setCuentas] = useState([]);
+  const [idCuentaOrigen, setIdCuentaOrigen] = useState('');
+  
+  const [tipoServicio, setTipoServicio] = useState('TELEFONO');
   const [identificador, setIdentificador] = useState('');
   const [monto, setMonto] = useState('');
   const [pin, setPin] = useState('');
   const [referenciaCliente, setReferenciaCliente] = useState('');
   
+  const [loadingCuentas, setLoadingCuentas] = useState(false);
+  
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCuentas = async () => {
+      try {
+        setLoadingCuentas(true);
+        const response = await api.get(`/api/Cuentahabientes/${idCliente}/cuentas`);
+        const data = response.data || [];
+        setCuentas(data);
+        if (data.length > 0) {
+          setIdCuentaOrigen(String(data[0].idCuenta));
+        }
+      } catch (err) {
+        setError('No se pudieron cargar tus cuentas.');
+      } finally {
+        setLoadingCuentas(false);
+      }
+    };
+    if (idCliente) {
+      fetchCuentas();
+    }
+  }, [idCliente]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,9 +49,9 @@ export default function PaymentView() {
 
     try {
       await api.post('/api/Pagos/ejecutar', {
-        numeroTarjeta: numeroTarjeta,
+        idCuenta: parseInt(idCuentaOrigen, 10),
         pin: pin,
-        tipoServicio: parseInt(tipoServicio, 10),
+        tipoServicio: tipoServicio,
         identificador: identificador,
         monto: parseFloat(monto),
         referenciaCliente: referenciaCliente || null
@@ -36,7 +61,6 @@ export default function PaymentView() {
       setIdentificador('');
       setMonto('');
       setPin('');
-      setNumeroTarjeta('');
       setReferenciaCliente('');
     } catch (err) {
       setError(err.response?.data?.message || 'Ocurrió un error al procesar el pago.');
@@ -47,9 +71,9 @@ export default function PaymentView() {
 
   const renderIcon = () => {
     switch (tipoServicio) {
-      case '1': return <Phone size={20} className="text-blue-900" />;
-      case '2': return <Zap size={20} className="text-yellow-500" />;
-      case '3': return <Droplets size={20} className="text-cyan-500" />;
+      case 'TELEFONO': return <Phone size={20} className="text-blue-900" />;
+      case 'LUZ': return <Zap size={20} className="text-yellow-500" />;
+      case 'UNIVERSIDAD': return <CreditCard size={20} className="text-blue-900" />;
       default: return <CreditCard size={20} className="text-blue-900" />;
     }
   };
@@ -81,16 +105,26 @@ export default function PaymentView() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-                Número de Tarjeta
+                Cuenta Origen
               </label>
-              <input
-                type="text"
-                required
-                value={numeroTarjeta}
-                onChange={(e) => setNumeroTarjeta(e.target.value)}
-                placeholder="0000 0000 0000 0000"
-                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
-              />
+              <select
+                value={idCuentaOrigen}
+                onChange={(e) => setIdCuentaOrigen(e.target.value)}
+                disabled={loadingCuentas}
+                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
+              >
+                {loadingCuentas ? (
+                  <option>Cargando cuentas...</option>
+                ) : cuentas.length === 0 ? (
+                  <option value="">No tienes cuentas activas</option>
+                ) : (
+                  cuentas.map(c => (
+                    <option key={c.idCuenta} value={c.idCuenta}>
+                      Cuenta {c.noCuenta} - Q{Number(c.saldoActual).toFixed(2)}
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
 
             <div>
@@ -120,9 +154,9 @@ export default function PaymentView() {
                   onChange={(e) => setTipoServicio(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
                 >
-                  <option value="1">Telefonía (Celular)</option>
-                  <option value="2">Energía Eléctrica (Contador)</option>
-                  <option value="3">Agua Potable (Medidor)</option>
+                  <option value="TELEFONO">Telefonía (Celular)</option>
+                  <option value="LUZ">Energía Eléctrica (Contador)</option>
+                  <option value="UNIVERSIDAD">Universidad (Pago de colegiatura)</option>
                 </select>
               </div>
             </div>

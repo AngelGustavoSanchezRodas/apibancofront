@@ -1,8 +1,9 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 // Usamos import.meta.env para Vite. 
 // Si la variable no existe, el fallback es nuestra URL de producción.
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'https://bancocentroamericano.azurewebsites.net';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -19,5 +20,18 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Interceptor para manejar errores globales (ej. 401)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      sessionStorage.removeItem('auth-storage');
+      useAuthStore.getState().logout();
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;

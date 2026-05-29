@@ -6,14 +6,14 @@ export const useAuthStore = create(
     (set) => ({
       token: null,
       role: null,
-      userId: null,
+      idCliente: null,
       isAuthenticated: false,
 
-      login: (token, role, userId) => 
+      login: (token, role, idCliente) => 
         set({ 
           token, 
           role, 
-          userId, 
+          idCliente, 
           isAuthenticated: true 
         }),
 
@@ -21,7 +21,7 @@ export const useAuthStore = create(
         set({ 
           token: null, 
           role: null, 
-          userId: null, 
+          idCliente: null, 
           isAuthenticated: false 
         }),
     }),

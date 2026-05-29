@@ -4,7 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 import { Wallet, Activity } from 'lucide-react';
 
 export default function DashboardView() {
-  const { userId } = useAuthStore();
+  const { idCliente } = useAuthStore();
   const [saldo, setSaldo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,8 +13,13 @@ export default function DashboardView() {
     const fetchSaldo = async () => {
       try {
         setLoading(true);
-        const response = await api.get(`/api/Operaciones/saldo/${userId}`);
-        setSaldo(typeof response.data === 'number' ? response.data : response.data?.saldo || 0);
+        const response = await api.get(`/api/Cuentahabientes/${idCliente}/cuentas`);
+        const cuentas = response.data || [];
+        if (cuentas.length > 0) {
+          setSaldo(cuentas[0].saldoActual);
+        } else {
+          setSaldo(0);
+        }
       } catch (err) {
         setError('No se pudo cargar el saldo actual.');
       } finally {
@@ -22,10 +27,10 @@ export default function DashboardView() {
       }
     };
 
-    if (userId) {
+    if (idCliente) {
       fetchSaldo();
     }
-  }, [userId]);
+  }, [idCliente]);
 
   return (
     <div className="max-w-4xl">
