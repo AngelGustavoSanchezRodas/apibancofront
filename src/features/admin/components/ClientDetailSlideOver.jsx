@@ -22,6 +22,7 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
   const [loadingCuenta, setLoadingCuenta] = useState(false);
   const [montoDeposito, setMontoDeposito] = useState('');
   const [createdClientInfo, setCreatedClientInfo] = useState(null);
+  const [createdCardInfo, setCreatedCardInfo] = useState(null);
 
   // Kardex state
   const [kardex, setKardex] = useState([]);
@@ -72,6 +73,7 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
     setSuccessMsg('');
     setMontoDeposito('');
     setCreatedClientInfo(null);
+    setCreatedCardInfo(null);
     setActiveTab('perfil');
   }, [client, isOpen]);
 
@@ -103,6 +105,7 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
           className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
           onClick={() => {
             setCreatedClientInfo(null);
+            setCreatedCardInfo(null);
             onClose();
             if (onSuccess) onSuccess();
           }}
@@ -116,6 +119,7 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
             <button 
               onClick={() => {
                 setCreatedClientInfo(null);
+                setCreatedCardInfo(null);
                 onClose();
                 if (onSuccess) onSuccess();
               }}
@@ -129,24 +133,51 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-800 text-sm">
               <h3 className="font-bold mb-1">¡Cuentahabiente Registrado!</h3>
-              <p>El perfil se ha creado correctamente en el core bancario.</p>
+              <p>El perfil se ha creado y se ha asociado una tarjeta de débito automáticamente en el core bancario.</p>
             </div>
 
             {/* Credentials Box */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Credenciales de Acceso</h4>
-              <div>
-                <span className="block text-xs text-slate-500 font-medium">Nombre Completo</span>
-                <span className="text-sm font-bold text-slate-950">{createdClientInfo.nombreCompleto}</span>
+              <div className="flex justify-between items-end border-b border-slate-200 pb-2">
+                <div>
+                  <span className="block text-xs text-slate-500 font-medium">Nombre Completo</span>
+                  <span className="text-sm font-bold text-slate-950">{createdClientInfo.nombreCompleto}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(createdClientInfo.nombreCompleto)}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                >
+                  Copiar
+                </button>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="block text-xs text-slate-500 font-medium">Usuario (DPI)</span>
-                  <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.usuarioAsignado}</span>
+                <div className="flex flex-col justify-between border-r border-slate-200 pr-2">
+                  <div>
+                    <span className="block text-xs text-slate-500 font-medium">Usuario (DPI)</span>
+                    <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.usuarioAsignado}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(createdClientInfo.usuarioAsignado)}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
+                  >
+                    Copiar
+                  </button>
                 </div>
-                <div>
-                  <span className="block text-xs text-slate-500 font-medium">Contraseña Temporal</span>
-                  <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.passwordTemporal}</span>
+                <div className="flex flex-col justify-between">
+                  <div>
+                    <span className="block text-xs text-slate-500 font-medium">Contraseña Temporal</span>
+                    <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.passwordTemporal}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(createdClientInfo.passwordTemporal)}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
+                  >
+                    Copiar
+                  </button>
                 </div>
               </div>
               <p className="text-[11px] text-slate-500">
@@ -154,47 +185,81 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
               </p>
             </div>
 
-            {/* Activation Box */}
-            {cuenta && (
-              <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-5 space-y-4">
-                <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">Activación de Cuenta</h4>
-                {cuenta.idEstado === 3 ? (
-                  <>
-                    <p className="text-xs text-slate-600">
-                      La cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) requiere un depósito inicial para ser activada.
-                    </p>
-                    {error && <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-100 font-medium">{error}</div>}
-                    {successMsg && <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded-lg border border-emerald-100 font-medium">{successMsg}</div>}
-                    <div className="space-y-3">
-                      <input 
-                        type="number" 
-                        min="0.01"
-                        step="0.01"
-                        value={montoDeposito}
-                        onChange={(e) => setMontoDeposito(e.target.value)}
-                        placeholder="Monto de depósito inicial (Q)"
-                        className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none font-medium"
-                      />
-                      <button 
-                        onClick={handleActivateAccount}
-                        disabled={loading}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
-                      >
-                        {loading ? 'Activando...' : 'Activar Cuenta y Fondear'}
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
-                    ✓ Cuenta activada exitosamente con saldo de Q {cuenta.saldo.toFixed(2)}.
+            {/* Card Box */}
+            {createdCardInfo ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <CreditCard size={14} className="text-slate-600" /> Tarjeta de Débito Generada
+                </h4>
+                <div className="flex justify-between items-end border-b border-slate-200 pb-2">
+                  <div>
+                    <span className="block text-xs text-slate-500 font-medium">Número de Tarjeta</span>
+                    <span className="text-sm font-mono font-bold text-slate-950">
+                      {createdCardInfo.numeroTarjeta}
+                    </span>
                   </div>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard.writeText(createdCardInfo.numeroTarjeta)}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
+                  >
+                    Copiar
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="flex flex-col justify-between border-r border-slate-200 pr-2">
+                    <div>
+                      <span className="block text-xs text-slate-500 font-medium">Vencimiento</span>
+                      <span className="text-sm font-mono font-bold text-slate-950">
+                        {String(createdCardInfo.mesVencimiento).padStart(2, '0')}/{createdCardInfo.anioVencimiento}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(`${String(createdCardInfo.mesVencimiento).padStart(2, '0')}/${createdCardInfo.anioVencimiento}`)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                  <div className="flex flex-col justify-between border-r border-slate-200 pr-2 pl-1">
+                    <div>
+                      <span className="block text-xs text-slate-500 font-medium">CVV</span>
+                      <span className="text-sm font-mono font-bold text-slate-950">{createdCardInfo.cvv}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(createdCardInfo.cvv)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                  <div className="flex flex-col justify-between pl-1">
+                    <div>
+                      <span className="block text-xs text-slate-500 font-medium">PIN</span>
+                      <span className="text-sm font-mono font-bold text-slate-950">{createdCardInfo.pin}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => navigator.clipboard.writeText(createdCardInfo.pin)}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
+                    >
+                      Copiar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-amber-50 text-amber-800 text-xs rounded-lg border border-amber-200">
+                ⚠ No se pudo generar la tarjeta automáticamente. Puede generarla desde la pestaña Operativa del perfil.
               </div>
             )}
 
             <button
               onClick={() => {
                 setCreatedClientInfo(null);
+                setCreatedCardInfo(null);
                 onClose();
                 if (onSuccess) onSuccess();
               }}
@@ -226,15 +291,20 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
       const data = response.data;
       setCreatedClientInfo(data);
 
-      // Cargar la cuenta del nuevo cliente recién creado para habilitar su activación
+      // Cargar la cuenta del nuevo cliente recién creado para asociar la tarjeta
       try {
         const resCuentas = await api.get(`/api/Cuentahabientes/${data.idCliente}/cuentas`);
         const cuentasData = Array.isArray(resCuentas.data) ? resCuentas.data : resCuentas.data?.valor || [];
         if (cuentasData.length > 0) {
-          setCuenta(cuentasData[0]);
+          const cuentaNueva = cuentasData[0];
+          setCuenta(cuentaNueva);
+          // Asociar tarjeta de débito automáticamente
+          const resTarjeta = await api.post('/api/Cuentahabientes/tarjeta', { idCuenta: cuentaNueva.idCuenta });
+          setCreatedCardInfo(resTarjeta.data);
         }
       } catch (errCuentas) {
-        console.warn("No se pudo cargar la cuenta tras registrar el perfil", errCuentas);
+        console.warn("No se pudo cargar la cuenta o asociar la tarjeta tras registrar el perfil", errCuentas);
+        setError("Se creó el perfil pero no se pudo asociar la tarjeta automáticamente.");
       }
     } catch (err) {
       setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al registrar perfil.');
@@ -452,32 +522,14 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
               ) : !cuenta ? (
                 <div className="text-center text-slate-500 py-4">No se encontró una cuenta activa o pendiente para este cliente.</div>
               ) : cuenta.idEstado === 3 ? (
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <h3 className="text-sm font-bold text-slate-900 mb-2">Activar Cuenta</h3>
-                  <p className="text-xs text-slate-500 mb-4">
-                    La cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) está inactiva. Realiza un depósito inicial para activarla.
+                <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-amber-800">
+                  <h3 className="text-sm font-bold mb-2">Cuenta Inactiva</h3>
+                  <p className="text-xs">
+                    La cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) se encuentra inactiva (pendiente de activación).
                   </p>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Monto de Depósito Inicial (Q)</label>
-                      <input 
-                        type="number" 
-                        min="0.01"
-                        step="0.01"
-                        value={montoDeposito}
-                        onChange={(e) => setMontoDeposito(e.target.value)}
-                        placeholder="Ej. 100.00"
-                        className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none font-medium"
-                      />
-                    </div>
-                    <button 
-                      onClick={handleActivateAccount}
-                      disabled={loading}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex justify-center items-center gap-2"
-                    >
-                      Activar Cuenta
-                    </button>
-                  </div>
+                  <p className="text-xs mt-2 font-medium">
+                    El cuentahabiente debe iniciar sesión en el portal bancario y realizar su depósito inicial para activarla.
+                  </p>
                 </div>
               ) : cuenta.idEstado === 1 ? (
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">

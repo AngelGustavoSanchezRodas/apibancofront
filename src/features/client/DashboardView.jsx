@@ -10,49 +10,163 @@ export default function DashboardView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // 1. Obtener la cuenta (CORRECCIÓN: ahora guardamos el objeto completo)
-        const resCuentas = await api.get(`/api/Cuentahabientes/${idCliente}/cuentas`);
-        const cuentasData = Array.isArray(resCuentas.data) ? resCuentas.data : resCuentas.data?.valor || [];
-        
-        if (cuentasData.length > 0) {
-          const cuentaPrincipal = cuentasData[0];
-          setCuenta(cuentaPrincipal);
+  // Activation state
+  const [activationAmount, setActivationAmount] = useState('');
+  const [activating, setActivating] = useState(false);
+  const [activationError, setActivationError] = useState(null);
+  const [activationSuccess, setActivationSuccess] = useState(null);
 
-          // 2. Obtener la bitácora de movimientos usando el idCuenta recién descubierto
-          try {
-            const resBitacora = await api.get(`/api/Bitacora/kardex/${cuentaPrincipal.idCuenta}`);
-            const movimientosData = Array.isArray(resBitacora.data) ? resBitacora.data : resBitacora.data?.valor || [];
-            // Tomamos los últimos 5 para el dashboard
-            setMovimientos(movimientosData.slice(0, 5));
-          } catch (errBitacora) {
-            console.warn("No se pudieron cargar los movimientos", errBitacora);
-          }
+  // Quick operations state
+  const [activeOpTab, setActiveOpTab] = useState('deposito'); // 'deposito' or 'retiro'
+  const [opAmount, setOpAmount] = useState('');
+  const [opReference, setOpReference] = useState('');
+  const [opLoading, setOpLoading] = useState(false);
+  const [opError, setOpError] = useState(null);
+  const [opSuccess, setOpSuccess] = useState(null);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const resCuentas = await api.get(`/api/Cuentahabientes/${idCliente}/cuentas`);
+      const cuentasData = Array.isArray(resCuentas.data) ? resCuentas.data : resCuentas.data?.valor || [];
+      
+      if (cuentasData.length > 0) {
+        const cuentaPrincipal = cuentasData[0];
+        setCuenta(cuentaPrincipal);
+
+        try {
+          const resBitacora = await api.get(`/api/Bitacora/kardex/${cuentaPrincipal.idCuenta}`);
+          const movimientosData = Array.isArray(resBitacora.data) ? resBitacora.data : resBitacora.data?.valor || [];
+          setMovimientos(movimientosData.slice(0, 5));
+        } catch (errBitacora) {
+          console.warn("No se pudieron cargar los movimientos", errBitacora);
         }
-      } catch (err) {
-        setError(err.response?.data?.mensaje || err.response?.data?.error || 'No se pudo cargar la información de la cuenta.');
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (err) {
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'No se pudo cargar la información de la cuenta.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (idCliente) {
       fetchDashboardData();
     }
   }, [idCliente]);
 
+  const handleActivate = async (e) => {
+    e.preventDefault();
+    const parsedMonto = parseFloat(activationAmount);
+    if (isNaN(parsedMonto) || parsedMonto <= 0) {
+      setActivationError('El monto de depósito debe ser mayor a cero.');
+      return;
+    }
+    setActivating(true);
+    setActivationError(null);
+    setActivationSuccess(null);
+    try {
+      await api.post('/api/Operaciones/activar-cuenta', {
+        idCuenta: cuenta.idCuenta,
+        montoDeposito: parsedMonto
+      });
+      setActivationSuccess('¡Cuenta activada exitosamente con depósito inicial!');
+      setActivationAmount('');
+      await fetchDashboardData();
+    } catch (err) {
+      setActivationError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al activar la cuenta.');
+    } finally {
+      setActivating(false);
+    }
+  };
+
+  const handleQuickOperation = async (e) => {
+    e.preventDefault();
+    const parsedMonto = parseFloat(opAmount);
+    if (isNaN(parsedMonto) || parsedMonto <= 0) {
+      setOpError('El monto debe ser mayor a cero.');
+      return;
+    }
+    
+    setOpLoading(true);
+    setOpError(null);
+    setOpSuccess(null);
+    
+    const endpoint = activeOpTab === 'deposito' ? '/api/Operaciones/deposito' : '/api/Operaciones/retiro';
+    
+    try {
+      await api.post(endpoint, {
+        idCuenta: cuenta.idCuenta,
+        monto: parsedMonto,
+        referencia: opReference.trim() || null
+      });
+      
+      setOpSuccess(`¡${activeOpTab === 'deposito' ? 'Depósito' : 'Retiro'} realizado con éxito!`);
+      setOpAmount('');
+      setOpReference('');
+      await fetchDashboardData();
+    } catch (err) {
+      setOpError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al procesar la operación.');
+    } finally {
+      setOpLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       <h2 className="text-3xl font-bold font-serif text-slate-900 tracking-wide mb-8">Resumen de Cuenta</h2>
       
+      {/* Activación Banner */}
+      {cuenta && cuenta.idEstado === 3 && (
+        <div className="bg-gradient-to-br from-amber-500/10 via-amber-600/10 to-transparent backdrop-blur-md shadow-lg border border-amber-500/20 rounded-2xl p-6 mb-8 animate-in fade-in duration-300">
+          <h3 className="text-lg font-bold text-amber-900 mb-2 flex items-center gap-2">
+            ⚠️ Activación de Cuenta Requerida
+          </h3>
+          <p className="text-sm text-amber-800/80 mb-6 max-w-xl">
+            Tu cuenta <span className="font-mono font-bold text-amber-900">{cuenta.noCuenta}</span> se encuentra inactiva.
+            Para empezar a operar, realiza tu depósito de activación inicial. El monto mínimo recomendado es de Q0.01.
+          </p>
+          {activationError && (
+            <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg border border-rose-100 font-medium mb-4">
+              {activationError}
+            </div>
+          )}
+          {activationSuccess && (
+            <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded-lg border border-emerald-100 font-medium mb-4">
+              {activationSuccess}
+            </div>
+          )}
+          <form onSubmit={handleActivate} className="flex flex-col sm:flex-row gap-3 max-w-md">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">Q</span>
+              <input
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={activationAmount}
+                onChange={(e) => setActivationAmount(e.target.value)}
+                placeholder="Monto depósito inicial"
+                disabled={activating}
+                required
+                className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-amber-500 outline-none font-medium text-slate-800 disabled:opacity-50"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={activating}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-md shadow-amber-600/20 hover:shadow-lg disabled:opacity-50"
+            >
+              {activating ? 'Activando...' : 'Activar Cuenta'}
+            </button>
+          </form>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Tarjeta de Saldo */}
-        <div className="bg-white/90 backdrop-blur-md shadow-strong border border-white/20 rounded-2xl p-6 h-fit">
+        <div className="bg-white/90 backdrop-blur-md shadow-lg border border-white/20 rounded-2xl p-6 h-fit">
           <div className="flex items-center gap-3 text-slate-500 mb-6">
             <Wallet size={24} className="text-blue-900" />
             <h3 className="font-bold text-sm uppercase tracking-wider text-slate-700">Saldo Disponible</h3>
@@ -70,18 +184,19 @@ export default function DashboardView() {
           ) : cuenta ? (
             <div>
               <div className="text-5xl font-black text-slate-900 tracking-tighter">
-                {/* CORRECCIÓN DE MAPEO: cuenta.saldo en lugar de cuenta.saldoActual */}
                 Q {Number(cuenta.saldo || 0).toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
-              <p className="text-sm text-slate-500 mt-3 font-medium">Cuenta <span className="font-mono text-slate-700">{cuenta.noCuenta}</span> activa</p>
+              <p className="text-sm text-slate-500 mt-3 font-medium">
+                Cuenta <span className="font-mono text-slate-700">{cuenta.noCuenta}</span> {cuenta.idEstado === 3 ? 'inactiva' : 'activa'}
+              </p>
             </div>
           ) : (
-            <div className="text-slate-500 font-medium">No se encontraron cuentas activas.</div>
+            <div className="text-slate-500 font-medium">No se encontraron cuentas asociadas.</div>
           )}
         </div>
 
-        {/* Últimos Movimientos (AHORA DINÁMICO) */}
-        <div className="bg-white/90 backdrop-blur-md shadow-strong border border-white/20 rounded-2xl p-6">
+        {/* Últimos Movimientos */}
+        <div className="bg-white/90 backdrop-blur-md shadow-lg border border-white/20 rounded-2xl p-6">
           <div className="flex items-center gap-3 text-slate-500 mb-6">
             <Activity size={24} className="text-blue-900" />
             <h3 className="font-bold text-sm uppercase tracking-wider text-slate-700">Últimos Movimientos</h3>
@@ -96,7 +211,7 @@ export default function DashboardView() {
           ) : movimientos.length > 0 ? (
             <div className="space-y-4">
               {movimientos.map((mov, index) => {
-                const esIngreso = mov.idTipoTransaccion === 1 || mov.idTipoTransaccion === 7; // Ajusta lógica según tu catálogo
+                const esIngreso = mov.idTipoTransaccion === 1 || mov.idTipoTransaccion === 7;
                 return (
                   <div key={mov.idTransaccion || index} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-colors border border-slate-100">
                     <div className="flex items-center gap-3">
@@ -126,6 +241,89 @@ export default function DashboardView() {
           )}
         </div>
       </div>
+
+      {/* Operaciones Rápidas */}
+      {cuenta && cuenta.idEstado === 1 && (
+        <div className="mt-8 bg-white/90 backdrop-blur-md shadow-lg border border-slate-100 rounded-2xl p-6">
+          <div className="flex border-b border-slate-200 mb-6">
+            <button
+              onClick={() => {
+                setActiveOpTab('deposito');
+                setOpError(null);
+                setOpSuccess(null);
+              }}
+              className={`pb-3 px-4 font-bold text-sm border-b-2 transition-colors ${
+                activeOpTab === 'deposito' ? 'border-blue-600 text-blue-900' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Depositar Fondos
+            </button>
+            <button
+              onClick={() => {
+                setActiveOpTab('retiro');
+                setOpError(null);
+                setOpSuccess(null);
+              }}
+              className={`pb-3 px-4 font-bold text-sm border-b-2 transition-colors ${
+                activeOpTab === 'retiro' ? 'border-blue-600 text-blue-900' : 'border-transparent text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              Retirar Fondos
+            </button>
+          </div>
+
+          {opError && (
+            <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-100 font-medium mb-4">
+              {opError}
+            </div>
+          )}
+          {opSuccess && (
+            <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded-lg border border-emerald-100 font-medium mb-4">
+              {opSuccess}
+            </div>
+          )}
+
+          <form onSubmit={handleQuickOperation} className="space-y-4 max-w-md">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Monto (Q)</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">Q</span>
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={opAmount}
+                    onChange={(e) => setOpAmount(e.target.value)}
+                    placeholder="0.00"
+                    required
+                    disabled={opLoading}
+                    className="w-full pl-8 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-blue-600 outline-none font-medium text-slate-800"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">Referencia (Opcional)</label>
+                <input
+                  type="text"
+                  value={opReference}
+                  onChange={(e) => setOpReference(e.target.value)}
+                  placeholder="Ej. Depósito / Retiro"
+                  disabled={opLoading}
+                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:border-blue-600 outline-none font-medium text-slate-800"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={opLoading}
+              className="bg-slate-900 hover:bg-slate-800 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-colors shadow-md disabled:opacity-50"
+            >
+              {opLoading ? 'Procesando...' : activeOpTab === 'deposito' ? 'Confirmar Depósito' : 'Confirmar Retiro'}
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

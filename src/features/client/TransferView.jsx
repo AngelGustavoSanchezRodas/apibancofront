@@ -102,89 +102,111 @@ export default function TransferView() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-              Cuenta Origen
-            </label>
-            <select
-              value={idCuentaOrigen}
-              onChange={(e) => setIdCuentaOrigen(e.target.value)}
-              disabled={loadingCuentas}
-              className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
-            >
-              {loadingCuentas ? (
-                <option>Cargando cuentas...</option>
-              ) : cuentas.length === 0 ? (
-                <option value="">No tienes cuentas activas</option>
-              ) : (
-                cuentas.map(c => (
-                  <option key={c.idCuenta} value={c.idCuenta}>
-                    Cuenta {c.noCuenta} - Q{Number(c.saldo).toFixed(2)}
-                  </option>
-                ))
-              )}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-              Cuenta Destino
-            </label>
-            <input
-              type="number"
-              required
-              value={destino}
-              onChange={(e) => setDestino(e.target.value)}
-              placeholder="Ej. 1002"
-              className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-              Monto a Transferir (Q)
-            </label>
-            <input
-              type="number"
-              required
-              min="0.01"
-              step="0.01"
-              value={monto}
-              onChange={(e) => setMonto(e.target.value)}
-              placeholder="0.00"
-              className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-bold text-lg text-slate-900 focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-              Descripción / Referencia
-            </label>
-            <input
-              type="text"
-              value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              placeholder="Ej. Pago de alquiler (Opcional)"
-              className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4"
+        {/* Cuenta Origen Selector */}
+        <div className="mb-6">
+          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+            Cuenta Origen
+          </label>
+          <select
+            value={idCuentaOrigen}
+            onChange={(e) => setIdCuentaOrigen(e.target.value)}
+            disabled={loadingCuentas}
+            className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
           >
-            {loading ? (
-              <span>Procesando...</span>
+            {loadingCuentas ? (
+              <option>Cargando cuentas...</option>
+            ) : cuentas.length === 0 ? (
+              <option value="">No tienes cuentas registradas</option>
             ) : (
-              <>
-                <ArrowRightLeft size={18} />
-                <span>Confirmar Transferencia</span>
-              </>
+              cuentas.map(c => (
+                <option key={c.idCuenta} value={c.idCuenta}>
+                  Cuenta {c.noCuenta} - Q{Number(c.saldo).toFixed(2)} {c.idEstado === 3 ? '(Inactiva)' : '(Activa)'}
+                </option>
+              ))
             )}
-          </button>
-        </form>
+          </select>
+        </div>
+
+        {(() => {
+          const selectedCuenta = cuentas.find(c => String(c.idCuenta) === idCuentaOrigen);
+          const isCuentaInactiva = selectedCuenta?.idEstado === 3;
+
+          if (isCuentaInactiva) {
+            return (
+              <div className="p-6 bg-amber-50/90 border border-amber-200 rounded-xl text-amber-800 font-medium space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">⚠️ Activación Requerida</h3>
+                <p className="text-sm">
+                  Esta cuenta requiere un depósito inicial para poder realizar transferencias y otras transacciones.
+                </p>
+                <p className="text-xs text-amber-700">
+                  Puedes activarla desde el <strong>Resumen de Cuenta (Dashboard)</strong> realizando tu primer depósito.
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                  Cuenta Destino
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={destino}
+                  onChange={(e) => setDestino(e.target.value)}
+                  placeholder="Ej. 1002"
+                  className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                  Monto a Transferir (Q)
+                </label>
+                <input
+                  type="number"
+                  required
+                  min="0.01"
+                  step="0.01"
+                  value={monto}
+                  onChange={(e) => setMonto(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-bold text-lg text-slate-900 focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                  Descripción / Referencia
+                </label>
+                <input
+                  type="text"
+                  value={descripcion}
+                  onChange={(e) => setDescripcion(e.target.value)}
+                  placeholder="Ej. Pago de alquiler (Opcional)"
+                  className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4"
+              >
+                {loading ? (
+                  <span>Procesando...</span>
+                ) : (
+                  <>
+                    <ArrowRightLeft size={18} />
+                    <span>Confirmar Transferencia</span>
+                  </>
+                )}
+              </button>
+            </form>
+          );
+        })()}
       </div>
     </div>
   );

@@ -127,128 +127,150 @@ export default function PaymentView() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-                Cuenta Origen
-              </label>
-              <select
-                value={idCuentaOrigen}
-                onChange={(e) => setIdCuentaOrigen(e.target.value)}
-                disabled={loadingCuentas}
-                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
-              >
-                {loadingCuentas ? (
-                  <option>Cargando cuentas...</option>
-                ) : cuentas.length === 0 ? (
-                  <option value="">No tienes cuentas activas</option>
-                ) : (
-                  cuentas.map(c => (
-                    <option key={c.idCuenta} value={c.idCuenta}>
-                      Cuenta {c.noCuenta} - Q{Number(c.saldo).toFixed(2)}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-                PIN de Seguridad
-              </label>
-              <input
-                type="password"
-                required
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                placeholder="••••"
-                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-                Servicio a Pagar
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  {renderIcon()}
-                </div>
-                <select
-                  value={tipoServicio}
-                  onChange={(e) => setTipoServicio(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
-                >
-                  <option value="2">Telefonía (Celular)</option>
-                  <option value="3">Energía Eléctrica (Contador)</option>
-                  <option value="1">Universidad (Pago de colegiatura)</option>
-                </select>
-              </div>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-                Identificador / Contrato
-              </label>
-              <input
-                type="text"
-                required
-                value={identificador}
-                onChange={(e) => setIdentificador(e.target.value)}
-                placeholder="Ej. 12345678"
-                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
-              />
-            </div>
-            
-            <div className="md:col-span-2">
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
-                Referencia (Opcional)
-              </label>
-              <input
-                type="text"
-                value={referenciaCliente}
-                onChange={(e) => setReferenciaCliente(e.target.value)}
-                placeholder="Ej. Pago de luz de la casa"
-                className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
-              />
-            </div>
-          </div>
-
-          <div className="pt-6 pb-2 border-t border-slate-100/50">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-4 text-center">
-              Monto Total a Debitar
-            </label>
-            <div className="flex justify-center items-center">
-              <span className="text-3xl font-medium text-slate-400 mr-2">Q</span>
-              <input
-                type="number"
-                required
-                min="0.01"
-                step="0.01"
-                value={monto}
-                onChange={(e) => setMonto(e.target.value)}
-                placeholder="0.00"
-                className="w-48 px-2 py-2 text-center bg-transparent border-b-2 border-slate-300 font-black text-5xl text-slate-900 focus:border-blue-700 outline-none transition-colors"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4 shadow-md"
+        {/* Cuenta Origen Selector */}
+        <div className="mb-6">
+          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+            Cuenta Origen
+          </label>
+          <select
+            value={idCuentaOrigen}
+            onChange={(e) => setIdCuentaOrigen(e.target.value)}
+            disabled={loadingCuentas}
+            className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
           >
-            {loading ? (
-              <span>Procesando pago...</span>
+            {loadingCuentas ? (
+              <option>Cargando cuentas...</option>
+            ) : cuentas.length === 0 ? (
+              <option value="">No tienes cuentas registradas</option>
             ) : (
-              <>
-                <CreditCard size={18} />
-                <span>Ejecutar Pago</span>
-              </>
+              cuentas.map(c => (
+                <option key={c.idCuenta} value={c.idCuenta}>
+                  Cuenta {c.noCuenta} - Q{Number(c.saldo).toFixed(2)} {c.idEstado === 3 ? '(Inactiva)' : '(Activa)'}
+                </option>
+              ))
             )}
-          </button>
-        </form>
+          </select>
+        </div>
+
+        {(() => {
+          const selectedCuenta = cuentas.find(c => String(c.idCuenta) === idCuentaOrigen);
+          const isCuentaInactiva = selectedCuenta?.idEstado === 3;
+
+          if (isCuentaInactiva) {
+            return (
+              <div className="p-6 bg-amber-50/90 border border-amber-200 rounded-xl text-amber-800 font-medium space-y-3">
+                <h3 className="font-bold text-base flex items-center gap-2">⚠️ Activación Requerida</h3>
+                <p className="text-sm">
+                  Esta cuenta requiere un depósito inicial para poder realizar pagos de servicios y otras transacciones.
+                </p>
+                <p className="text-xs text-amber-700">
+                  Puedes activarla desde el <strong>Resumen de Cuenta (Dashboard)</strong> realizando tu primer depósito.
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                    PIN de Seguridad
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    placeholder="••••"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                    Servicio a Pagar
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      {renderIcon()}
+                    </div>
+                    <select
+                      value={tipoServicio}
+                      onChange={(e) => setTipoServicio(e.target.value)}
+                      className="w-full pl-12 pr-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="2">Telefonía (Celular)</option>
+                      <option value="3">Energía Eléctrica (Contador)</option>
+                      <option value="1">Universidad (Pago de colegiatura)</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                    Identificador / Contrato
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={identificador}
+                    onChange={(e) => setIdentificador(e.target.value)}
+                    placeholder="Ej. 12345678"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">
+                    Referencia (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={referenciaCliente}
+                    onChange={(e) => setReferenciaCliente(e.target.value)}
+                    placeholder="Ej. Pago de luz de la casa"
+                    className="w-full px-4 py-3 bg-white/50 border border-slate-200 rounded-xl font-medium focus:bg-white focus:border-blue-700 focus:ring-1 focus:ring-blue-700 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-6 pb-2 border-t border-slate-100/50">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-4 text-center">
+                  Monto Total a Debitar
+                </label>
+                <div className="flex justify-center items-center">
+                  <span className="text-3xl font-medium text-slate-400 mr-2">Q</span>
+                  <input
+                    type="number"
+                    required
+                    min="0.01"
+                    step="0.01"
+                    value={monto}
+                    onChange={(e) => setMonto(e.target.value)}
+                    placeholder="0.00"
+                    className="w-48 px-2 py-2 text-center bg-transparent border-b-2 border-slate-300 font-black text-5xl text-slate-900 focus:border-blue-700 outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-3.5 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-4 shadow-md"
+              >
+                {loading ? (
+                  <span>Procesando pago...</span>
+                ) : (
+                  <>
+                    <CreditCard size={18} />
+                    <span>Ejecutar Pago</span>
+                  </>
+                )}
+              </button>
+            </form>
+          );
+        })()}
       </div>
     </div>
   );

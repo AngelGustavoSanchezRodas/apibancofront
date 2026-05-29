@@ -36,14 +36,6 @@ export default function AdminLayout() {
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </Link>
-          <Link to="/admin/clients" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition-colors">
-            <Users size={20} />
-            <span>Clientes</span>
-          </Link>
-          <Link to="/admin/settings" className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition-colors">
-            <Settings size={20} />
-            <span>Configuración</span>
-          </Link>
         </nav>
       </aside>
 
