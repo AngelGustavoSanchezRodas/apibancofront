@@ -12,19 +12,19 @@ export default function ClientsView() {
   const [isSlideOverOpen, setSlideOverOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
 
+  const fetchClients = async () => {
+    try {
+      setError(null);
+      const response = await api.get('/api/Cuentahabientes');
+      const data = Array.isArray(response.data) ? response.data : response.data?.valor || response.data?.data || [];
+      setClients(data);
+      setFilteredClients(data);
+    } catch (err) {
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al cargar la lista de clientes.');
+    }
+  };
+
   useEffect(() => {
-    const fetchClients = async () => {
-      try {
-        setError(null);
-        const response = await api.get('/api/Cuentahabientes');
-        const data = Array.isArray(response.data) ? response.data : response.data?.valor || response.data?.data || [];
-        setClients(data);
-        setFilteredClients(data);
-      } catch (err) {
-        // Corrección: Lectura dinámica del error
-        setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al cargar la lista de clientes.');
-      }
-    };
     fetchClients();
   }, []);
 
@@ -146,7 +146,7 @@ export default function ClientsView() {
         isOpen={isSlideOverOpen} 
         onClose={() => setSlideOverOpen(false)}
         client={selectedClient}
-        onSuccess={() => window.location.reload()} 
+        onSuccess={fetchClients} 
       />
     </div>
   );

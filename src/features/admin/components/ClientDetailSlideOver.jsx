@@ -21,6 +21,7 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
   const [cuenta, setCuenta] = useState(null);
   const [loadingCuenta, setLoadingCuenta] = useState(false);
   const [montoDeposito, setMontoDeposito] = useState('');
+  const [createdClientInfo, setCreatedClientInfo] = useState(null);
 
   // Kardex state
   const [kardex, setKardex] = useState([]);
@@ -70,6 +71,7 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
     setError(null);
     setSuccessMsg('');
     setMontoDeposito('');
+    setCreatedClientInfo(null);
     setActiveTab('perfil');
   }, [client, isOpen]);
 
@@ -93,12 +95,126 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
 
   if (!isOpen) return null;
 
+  if (createdClientInfo) {
+    return (
+      <div className="fixed inset-0 z-50 flex justify-end">
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
+          onClick={() => {
+            setCreatedClientInfo(null);
+            onClose();
+            if (onSuccess) onSuccess();
+          }}
+        />
+        
+        {/* SlideOver Panel */}
+        <div className="relative w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <h2 className="text-lg font-bold text-slate-900">Registro Exitoso</h2>
+            <button 
+              onClick={() => {
+                setCreatedClientInfo(null);
+                onClose();
+                if (onSuccess) onSuccess();
+              }}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-800 text-sm">
+              <h3 className="font-bold mb-1">¡Cuentahabiente Registrado!</h3>
+              <p>El perfil se ha creado correctamente en el core bancario.</p>
+            </div>
+
+            {/* Credentials Box */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Credenciales de Acceso</h4>
+              <div>
+                <span className="block text-xs text-slate-500 font-medium">Nombre Completo</span>
+                <span className="text-sm font-bold text-slate-950">{createdClientInfo.nombreCompleto}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-xs text-slate-500 font-medium">Usuario (DPI)</span>
+                  <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.usuarioAsignado}</span>
+                </div>
+                <div>
+                  <span className="block text-xs text-slate-500 font-medium">Contraseña Temporal</span>
+                  <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.passwordTemporal}</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                * Entregue estas credenciales al cliente para su acceso inicial.
+              </p>
+            </div>
+
+            {/* Activation Box */}
+            {cuenta && (
+              <div className="bg-blue-50/50 border border-blue-200 rounded-xl p-5 space-y-4">
+                <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider">Activación de Cuenta</h4>
+                {cuenta.idEstado === 3 ? (
+                  <>
+                    <p className="text-xs text-slate-600">
+                      La cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) requiere un depósito inicial para ser activada.
+                    </p>
+                    {error && <div className="p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-100 font-medium">{error}</div>}
+                    {successMsg && <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded-lg border border-emerald-100 font-medium">{successMsg}</div>}
+                    <div className="space-y-3">
+                      <input 
+                        type="number" 
+                        min="0.01"
+                        step="0.01"
+                        value={montoDeposito}
+                        onChange={(e) => setMontoDeposito(e.target.value)}
+                        placeholder="Monto de depósito inicial (Q)"
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none font-medium"
+                      />
+                      <button 
+                        onClick={handleActivateAccount}
+                        disabled={loading}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors"
+                      >
+                        {loading ? 'Activando...' : 'Activar Cuenta y Fondear'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs font-medium">
+                    ✓ Cuenta activada exitosamente con saldo de Q {cuenta.saldo.toFixed(2)}.
+                  </div>
+                )}
+              </div>
+            )}
+
+            <button
+              onClick={() => {
+                setCreatedClientInfo(null);
+                onClose();
+                if (onSuccess) onSuccess();
+              }}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 rounded-xl text-sm transition-colors mt-6"
+            >
+              Finalizar y Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const handleCreateProfile = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMsg('');
     try {
-      await api.post('/api/Cuentahabientes/perfil', { 
+      const response = await api.post('/api/Cuentahabientes/perfil', { 
         dpi, 
         nit, 
         nombre, 
@@ -107,10 +223,21 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
         email: email || null,
         idTipoCuenta: parseInt(idTipoCuenta, 10)
       });
-      setSuccessMsg('Perfil creado exitosamente.');
-      if (onSuccess) onSuccess();
+      const data = response.data;
+      setCreatedClientInfo(data);
+
+      // Cargar la cuenta del nuevo cliente recién creado para habilitar su activación
+      try {
+        const resCuentas = await api.get(`/api/Cuentahabientes/${data.idCliente}/cuentas`);
+        const cuentasData = Array.isArray(resCuentas.data) ? resCuentas.data : resCuentas.data?.valor || [];
+        if (cuentasData.length > 0) {
+          setCuenta(cuentasData[0]);
+        }
+      } catch (errCuentas) {
+        console.warn("No se pudo cargar la cuenta tras registrar el perfil", errCuentas);
+      }
     } catch (err) {
-      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al crear perfil.');
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al registrar perfil.');
     } finally {
       setLoading(false);
     }
