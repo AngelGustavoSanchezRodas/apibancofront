@@ -27,7 +27,7 @@ export default function TransferView() {
           setIdCuentaOrigen(String(data[0].idCuenta));
         }
       } catch (err) {
-        setError('No se pudieron cargar tus cuentas.');
+        setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error de conexión con el servidor.');
       } finally {
         setLoadingCuentas(false);
       }
@@ -41,13 +41,31 @@ export default function TransferView() {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+
+    const parsedOrigen = parseInt(idCuentaOrigen, 10);
+    const parsedDestino = parseInt(destino, 10);
+    const parsedMonto = parseFloat(monto);
+
+    if (!idCuentaOrigen || isNaN(parsedOrigen) || parsedOrigen <= 0) {
+      setError('La cuenta de origen es inválida o no está seleccionada.');
+      return;
+    }
+    if (!destino || isNaN(parsedDestino) || parsedDestino <= 0) {
+      setError('La cuenta de destino debe ser un número de cuenta válido.');
+      return;
+    }
+    if (!monto || isNaN(parsedMonto) || parsedMonto <= 0) {
+      setError('El monto a transferir debe ser mayor a cero.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       await api.post('/api/Operaciones/transferir', {
-        idCuentaOrigen: parseInt(idCuentaOrigen, 10),
-        idCuentaDestino: parseInt(destino, 10),
-        monto: parseFloat(monto),
+        idCuentaOrigen: parsedOrigen,
+        idCuentaDestino: parsedDestino,
+        monto: parsedMonto,
         descripcion: descripcion || 'Transferencia web'
       });
       setSuccess(true);
@@ -55,7 +73,7 @@ export default function TransferView() {
       setMonto('');
       setDescripcion('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Hubo un error al procesar la transferencia.');
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error de conexión con el servidor.');
     } finally {
       setLoading(false);
     }

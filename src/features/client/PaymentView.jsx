@@ -31,7 +31,7 @@ export default function PaymentView() {
           setIdCuentaOrigen(String(data[0].idCuenta));
         }
       } catch (err) {
-        setError('No se pudieron cargar tus cuentas.');
+        setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error de conexión con el servidor.');
       } finally {
         setLoadingCuentas(false);
       }
@@ -45,15 +45,41 @@ export default function PaymentView() {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+
+    const parsedCuenta = parseInt(idCuentaOrigen, 10);
+    const parsedTipoServicio = parseInt(tipoServicio, 10);
+    const parsedMonto = parseFloat(monto);
+
+    if (!idCuentaOrigen || isNaN(parsedCuenta) || parsedCuenta <= 0) {
+      setError('La cuenta de origen es inválida o no está seleccionada.');
+      return;
+    }
+    if (!tipoServicio || isNaN(parsedTipoServicio) || parsedTipoServicio <= 0) {
+      setError('El tipo de servicio es inválido o no está seleccionado.');
+      return;
+    }
+    if (!monto || isNaN(parsedMonto) || parsedMonto <= 0) {
+      setError('El monto del pago debe ser mayor a cero.');
+      return;
+    }
+    if (!identificador || !identificador.trim()) {
+      setError('El identificador o número de contrato es requerido.');
+      return;
+    }
+    if (!pin || !pin.trim()) {
+      setError('El PIN de seguridad es requerido.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       await api.post('/api/Pagos/ejecutar', {
-        idCuenta: parseInt(idCuentaOrigen, 10),
+        idCuenta: parsedCuenta,
         pin: pin,
-        tipoServicio: parseInt(tipoServicio, 10),
+        tipoServicio: parsedTipoServicio,
         identificador: identificador,
-        monto: parseFloat(monto),
+        monto: parsedMonto,
         referenciaCliente: referenciaCliente || null
       });
       
@@ -63,7 +89,7 @@ export default function PaymentView() {
       setPin('');
       setReferenciaCliente('');
     } catch (err) {
-      setError(err.response?.data?.message || 'Ocurrió un error al procesar el pago.');
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error de conexión con el servidor.');
     } finally {
       setLoading(false);
     }

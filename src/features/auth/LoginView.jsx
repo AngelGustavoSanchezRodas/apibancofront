@@ -16,6 +16,16 @@ export default function LoginView() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!credencial || !credencial.trim()) {
+      setError('El usuario es requerido.');
+      return;
+    }
+    if (!password || !password.trim()) {
+      setError('La contraseña es requerida.');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -30,11 +40,7 @@ export default function LoginView() {
         navigate('/client', { replace: true });
       }
     } catch (err) {
-      if (err.response && err.response.status === 401) {
-        setError('Credenciales inválidas. Intente de nuevo.');
-      } else {
-        setError('Error de conexión. Intente más tarde.');
-      }
+      setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error de conexión con el servidor.');
     } finally {
       setLoading(false);
     }
