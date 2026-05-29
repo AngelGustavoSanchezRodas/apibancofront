@@ -13,9 +13,14 @@ const api = axios.create({
 
 // Interceptor para inyectar el token desde el store global
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('auth-storage') ? JSON.parse(sessionStorage.getItem('auth-storage')).state.token : null;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  try {
+    const storageItem = sessionStorage.getItem('auth-storage');
+    const token = JSON.parse(storageItem)?.state?.token;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (err) {
+    console.warn("No se pudo leer el token de sesión");
   }
   return config;
 });

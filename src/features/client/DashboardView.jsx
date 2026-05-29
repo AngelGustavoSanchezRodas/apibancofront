@@ -21,7 +21,7 @@ export default function DashboardView() {
           setSaldo(0);
         }
       } catch (err) {
-        setError('No se pudo cargar el saldo actual.');
+        setError(err.response?.data?.mensaje || err.response?.data?.error || 'No se pudo conectar con el servidor.');
       } finally {
         setLoading(false);
       }
