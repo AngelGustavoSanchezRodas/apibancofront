@@ -23,6 +23,8 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
   const [montoDeposito, setMontoDeposito] = useState('');
   const [createdClientInfo, setCreatedClientInfo] = useState(null);
   const [createdCardInfo, setCreatedCardInfo] = useState(null);
+  const [copiedAll, setCopiedAll] = useState(false);
+  const [copiedCard, setCopiedCard] = useState(false);
 
   // Kardex state
   const [kardex, setKardex] = useState([]);
@@ -74,6 +76,8 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
     setMontoDeposito('');
     setCreatedClientInfo(null);
     setCreatedCardInfo(null);
+    setCopiedAll(false);
+    setCopiedCard(false);
     setActiveTab('perfil');
   }, [client, isOpen]);
 
@@ -94,6 +98,18 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
       fetchKardex();
     }
   }, [activeTab, cuenta]);
+
+  const handleCopyAll = () => {
+    if (!createdClientInfo) return;
+    const accessText = `=== CREDENCIALES DE ACCESO ===\nNombre Completo: ${createdClientInfo.nombreCompleto}\nUsuario (DPI): ${createdClientInfo.usuarioAsignado}\nContraseña Temporal: ${createdClientInfo.passwordTemporal}`;
+    const cardText = createdCardInfo 
+      ? `\n\n=== TARJETA DE DÉBITO ===\nNúmero de Tarjeta: ${createdCardInfo.numeroTarjeta}\nVencimiento: ${String(createdCardInfo.mesVencimiento).padStart(2, '0')}/${createdCardInfo.anioVencimiento}\nCVV: ${createdCardInfo.cvv}\nPIN: ${createdCardInfo.pin}`
+      : '\n\n=== TARJETA DE DÉBITO ===\nNo se generó tarjeta de débito automáticamente.';
+    
+    navigator.clipboard.writeText(accessText + cardText);
+    setCopiedAll(true);
+    setTimeout(() => setCopiedAll(false), 2000);
+  };
 
   if (!isOpen) return null;
 
@@ -131,130 +147,45 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
 
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-800 text-sm">
-              <h3 className="font-bold mb-1">¡Cuentahabiente Registrado!</h3>
-              <p>El perfil se ha creado y se ha asociado una tarjeta de débito automáticamente en el core bancario.</p>
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-800 text-sm flex flex-col gap-3">
+              <div>
+                <h3 className="font-bold mb-1">¡Cuentahabiente Registrado!</h3>
+                <p>El perfil se ha creado correctamente en el core bancario.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCopyAll}
+                className={`w-full py-2.5 px-4 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                  copiedAll 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-200'
+                }`}
+              >
+                {copiedAll ? '¡Copiado al portapapeles! ✓' : 'Copiar Credenciales de Acceso'}
+              </button>
             </div>
 
             {/* Credentials Box */}
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Credenciales de Acceso</h4>
-              <div className="flex justify-between items-end border-b border-slate-200 pb-2">
-                <div>
-                  <span className="block text-xs text-slate-500 font-medium">Nombre Completo</span>
-                  <span className="text-sm font-bold text-slate-950">{createdClientInfo.nombreCompleto}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard.writeText(createdClientInfo.nombreCompleto)}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
-                >
-                  Copiar
-                </button>
+              <div className="border-b border-slate-200 pb-2">
+                <span className="block text-xs text-slate-500 font-medium">Nombre Completo</span>
+                <span className="text-sm font-bold text-slate-950">{createdClientInfo.nombreCompleto}</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col justify-between border-r border-slate-200 pr-2">
-                  <div>
-                    <span className="block text-xs text-slate-500 font-medium">Usuario (DPI)</span>
-                    <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.usuarioAsignado}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(createdClientInfo.usuarioAsignado)}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
-                  >
-                    Copiar
-                  </button>
+                <div className="border-r border-slate-200 pr-2">
+                  <span className="block text-xs text-slate-500 font-medium">Usuario (DPI)</span>
+                  <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.usuarioAsignado}</span>
                 </div>
-                <div className="flex flex-col justify-between">
-                  <div>
-                    <span className="block text-xs text-slate-500 font-medium">Contraseña Temporal</span>
-                    <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.passwordTemporal}</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(createdClientInfo.passwordTemporal)}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
-                  >
-                    Copiar
-                  </button>
+                <div>
+                  <span className="block text-xs text-slate-500 font-medium">Contraseña Temporal</span>
+                  <span className="text-sm font-mono font-bold text-slate-950">{createdClientInfo.passwordTemporal}</span>
                 </div>
               </div>
               <p className="text-[11px] text-slate-500">
                 * Entregue estas credenciales al cliente para su acceso inicial.
               </p>
             </div>
-
-            {/* Card Box */}
-            {createdCardInfo ? (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
-                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <CreditCard size={14} className="text-slate-600" /> Tarjeta de Débito Generada
-                </h4>
-                <div className="flex justify-between items-end border-b border-slate-200 pb-2">
-                  <div>
-                    <span className="block text-xs text-slate-500 font-medium">Número de Tarjeta</span>
-                    <span className="text-sm font-mono font-bold text-slate-950">
-                      {createdCardInfo.numeroTarjeta}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => navigator.clipboard.writeText(createdCardInfo.numeroTarjeta)}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
-                  >
-                    Copiar
-                  </button>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="flex flex-col justify-between border-r border-slate-200 pr-2">
-                    <div>
-                      <span className="block text-xs text-slate-500 font-medium">Vencimiento</span>
-                      <span className="text-sm font-mono font-bold text-slate-950">
-                        {String(createdCardInfo.mesVencimiento).padStart(2, '0')}/{createdCardInfo.anioVencimiento}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(`${String(createdCardInfo.mesVencimiento).padStart(2, '0')}/${createdCardInfo.anioVencimiento}`)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
-                    >
-                      Copiar
-                    </button>
-                  </div>
-                  <div className="flex flex-col justify-between border-r border-slate-200 pr-2 pl-1">
-                    <div>
-                      <span className="block text-xs text-slate-500 font-medium">CVV</span>
-                      <span className="text-sm font-mono font-bold text-slate-950">{createdCardInfo.cvv}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(createdCardInfo.cvv)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
-                    >
-                      Copiar
-                    </button>
-                  </div>
-                  <div className="flex flex-col justify-between pl-1">
-                    <div>
-                      <span className="block text-xs text-slate-500 font-medium">PIN</span>
-                      <span className="text-sm font-mono font-bold text-slate-950">{createdCardInfo.pin}</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => navigator.clipboard.writeText(createdCardInfo.pin)}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 bg-blue-50 hover:bg-blue-100 rounded transition-colors self-start mt-2"
-                    >
-                      Copiar
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3 bg-amber-50 text-amber-800 text-xs rounded-lg border border-amber-200">
-                ⚠ No se pudo generar la tarjeta automáticamente. Puede generarla desde la pestaña Operativa del perfil.
-              </div>
-            )}
 
             <button
               onClick={() => {
@@ -291,20 +222,15 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
       const data = response.data;
       setCreatedClientInfo(data);
 
-      // Cargar la cuenta del nuevo cliente recién creado para asociar la tarjeta
+      // Cargar la cuenta del nuevo cliente recién creado
       try {
         const resCuentas = await api.get(`/api/Cuentahabientes/${data.idCliente}/cuentas`);
         const cuentasData = Array.isArray(resCuentas.data) ? resCuentas.data : resCuentas.data?.valor || [];
         if (cuentasData.length > 0) {
-          const cuentaNueva = cuentasData[0];
-          setCuenta(cuentaNueva);
-          // Asociar tarjeta de débito automáticamente
-          const resTarjeta = await api.post('/api/Cuentahabientes/tarjeta', { idCuenta: cuentaNueva.idCuenta });
-          setCreatedCardInfo(resTarjeta.data);
+          setCuenta(cuentasData[0]);
         }
       } catch (errCuentas) {
-        console.warn("No se pudo cargar la cuenta o asociar la tarjeta tras registrar el perfil", errCuentas);
-        setError("Se creó el perfil pero no se pudo asociar la tarjeta automáticamente.");
+        console.warn("No se pudo cargar la cuenta tras registrar el perfil", errCuentas);
       }
     } catch (err) {
       setError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al registrar perfil.');
@@ -346,8 +272,12 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
   const handleAssociateCard = async () => {
     setLoading(true);
     setError(null);
+    setSuccessMsg('');
+    setCreatedCardInfo(null);
+    setCopiedCard(false);
     try {
-      await api.post('/api/Cuentahabientes/tarjeta', { idCuenta: cuenta.idCuenta });
+      const response = await api.post('/api/Cuentahabientes/tarjeta', { idCuenta: cuenta.idCuenta });
+      setCreatedCardInfo(response.data);
       setSuccessMsg('Tarjeta asociada exitosamente.');
       if (onSuccess) onSuccess();
     } catch (err) {
@@ -532,19 +462,68 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
                   </p>
                 </div>
               ) : cuenta.idEstado === 1 ? (
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <h3 className="text-sm font-bold text-slate-900 mb-2">Asociar Nueva Tarjeta</h3>
-                  <p className="text-xs text-slate-500 mb-4">
-                    Genera una tarjeta de débito vinculada a la cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) del cliente.
-                  </p>
-                  <button 
-                    onClick={handleAssociateCard}
-                    disabled={loading}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex justify-center items-center gap-2"
-                  >
-                    <CreditCard size={16} />
-                    {loading ? 'Procesando...' : 'Asociar Tarjeta'}
-                  </button>
+                <div className="space-y-4">
+                  {createdCardInfo && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5 space-y-4 animate-in fade-in duration-300">
+                      <div className="flex justify-between items-center border-b border-emerald-200 pb-2">
+                        <h4 className="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                          <CreditCard size={14} className="text-emerald-700" /> Tarjeta Asociada con Éxito
+                        </h4>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const cardText = `=== TARJETA DE DÉBITO ===\nNúmero de Tarjeta: ${createdCardInfo.numeroTarjeta}\nVencimiento: ${String(createdCardInfo.mesVencimiento).padStart(2, '0')}/${createdCardInfo.anioVencimiento}\nCVV: ${createdCardInfo.cvv}\nPIN: ${createdCardInfo.pin}`;
+                            navigator.clipboard.writeText(cardText);
+                            setCopiedCard(true);
+                            setTimeout(() => setCopiedCard(false), 2000);
+                          }}
+                          className={`text-xs px-2.5 py-1 rounded font-semibold transition-colors ${
+                            copiedCard ? 'bg-emerald-600 text-white' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-800'
+                          }`}
+                        >
+                          {copiedCard ? '¡Copiado! ✓' : 'Copiar Tarjeta'}
+                        </button>
+                      </div>
+
+                      <div className="border-b border-emerald-200 pb-2">
+                        <span className="block text-xs text-emerald-600 font-medium">Número de Tarjeta</span>
+                        <span className="text-sm font-mono font-bold text-slate-950">
+                          {createdCardInfo.numeroTarjeta}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="border-r border-emerald-200 pr-2">
+                          <span className="block text-xs text-emerald-600 font-medium">Vencimiento</span>
+                          <span className="text-sm font-mono font-bold text-slate-950">
+                            {String(createdCardInfo.mesVencimiento).padStart(2, '0')}/{createdCardInfo.anioVencimiento}
+                          </span>
+                        </div>
+                        <div className="border-r border-emerald-200 pr-2 pl-1">
+                          <span className="block text-xs text-emerald-600 font-medium">CVV</span>
+                          <span className="text-sm font-mono font-bold text-slate-950">{createdCardInfo.cvv}</span>
+                        </div>
+                        <div className="pl-1">
+                          <span className="block text-xs text-emerald-600 font-medium">PIN</span>
+                          <span className="text-sm font-mono font-bold text-slate-950">{createdCardInfo.pin}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <h3 className="text-sm font-bold text-slate-900 mb-2">Asociar Nueva Tarjeta</h3>
+                    <p className="text-xs text-slate-500 mb-4">
+                      Genera una tarjeta de débito vinculada a la cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) del cliente.
+                    </p>
+                    <button 
+                      onClick={handleAssociateCard}
+                      disabled={loading}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex justify-center items-center gap-2"
+                    >
+                      <CreditCard size={16} />
+                      {loading ? 'Procesando...' : 'Asociar Tarjeta'}
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-600 text-sm">
