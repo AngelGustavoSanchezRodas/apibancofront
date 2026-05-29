@@ -242,8 +242,8 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
   const handleActivateAccount = async (e) => {
     e.preventDefault();
     const parsedMonto = parseFloat(montoDeposito);
-    if (isNaN(parsedMonto) || parsedMonto <= 0) {
-      setError('El monto de depósito debe ser mayor a cero.');
+    if (isNaN(parsedMonto) || parsedMonto < 100) {
+      setError('El monto de depósito inicial debe ser de al menos Q100.00.');
       return;
     }
     setLoading(true);
@@ -452,14 +452,33 @@ export default function ClientDetailSlideOver({ isOpen, onClose, client, onSucce
               ) : !cuenta ? (
                 <div className="text-center text-slate-500 py-4">No se encontró una cuenta activa o pendiente para este cliente.</div>
               ) : cuenta.idEstado === 3 ? (
-                <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 text-amber-800">
-                  <h3 className="text-sm font-bold mb-2">Cuenta Inactiva</h3>
-                  <p className="text-xs">
-                    La cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) se encuentra inactiva (pendiente de activación).
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <h3 className="text-sm font-bold text-slate-900 mb-2">Activar Cuenta</h3>
+                  <p className="text-xs text-slate-500 mb-4">
+                    La cuenta #{cuenta.idCuenta} ({cuenta.noCuenta}) está inactiva. Realiza un depósito inicial (mínimo Q100) para activarla.
                   </p>
-                  <p className="text-xs mt-2 font-medium">
-                    El cuentahabiente debe iniciar sesión en el portal bancario y realizar su depósito inicial para activarla.
-                  </p>
+                  <form onSubmit={handleActivateAccount} className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Monto de Depósito Inicial (Q)</label>
+                      <input 
+                        type="number" 
+                        min="100.00"
+                        step="0.01"
+                        value={montoDeposito}
+                        onChange={(e) => setMontoDeposito(e.target.value)}
+                        placeholder="Mínimo Q100.00"
+                        required
+                        className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:border-blue-600 outline-none font-medium"
+                      />
+                    </div>
+                    <button 
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors flex justify-center items-center gap-2"
+                    >
+                      {loading ? 'Activando...' : 'Activar Cuenta'}
+                    </button>
+                  </form>
                 </div>
               ) : cuenta.idEstado === 1 ? (
                 <div className="space-y-4">

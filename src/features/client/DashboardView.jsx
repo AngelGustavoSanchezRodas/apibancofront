@@ -10,12 +10,6 @@ export default function DashboardView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Activation state
-  const [activationAmount, setActivationAmount] = useState('');
-  const [activating, setActivating] = useState(false);
-  const [activationError, setActivationError] = useState(null);
-  const [activationSuccess, setActivationSuccess] = useState(null);
-
   // Quick operations state
   const [activeOpTab, setActiveOpTab] = useState('deposito'); // 'deposito' or 'retiro'
   const [opAmount, setOpAmount] = useState('');
@@ -57,31 +51,6 @@ export default function DashboardView() {
     }
   }, [idCliente]);
 
-  const handleActivate = async (e) => {
-    e.preventDefault();
-    const parsedMonto = parseFloat(activationAmount);
-    if (isNaN(parsedMonto) || parsedMonto <= 0) {
-      setActivationError('El monto de depósito debe ser mayor a cero.');
-      return;
-    }
-    setActivating(true);
-    setActivationError(null);
-    setActivationSuccess(null);
-    try {
-      await api.post('/api/Operaciones/activar-cuenta', {
-        idCuenta: cuenta.idCuenta,
-        montoDeposito: parsedMonto
-      });
-      setActivationSuccess('¡Cuenta activada exitosamente con depósito inicial!');
-      setActivationAmount('');
-      await fetchDashboardData();
-    } catch (err) {
-      setActivationError(err.response?.data?.mensaje || err.response?.data?.error || 'Error al activar la cuenta.');
-    } finally {
-      setActivating(false);
-    }
-  };
-
   const handleQuickOperation = async (e) => {
     e.preventDefault();
     const parsedMonto = parseFloat(opAmount);
@@ -122,45 +91,14 @@ export default function DashboardView() {
       {cuenta && cuenta.idEstado === 3 && (
         <div className="bg-gradient-to-br from-amber-500/10 via-amber-600/10 to-transparent backdrop-blur-md shadow-lg border border-amber-500/20 rounded-2xl p-6 mb-8 animate-in fade-in duration-300">
           <h3 className="text-lg font-bold text-amber-900 mb-2 flex items-center gap-2">
-            ⚠️ Activación de Cuenta Requerida
+            ⚠️ Cuenta Inactiva (Pendiente de Activación)
           </h3>
-          <p className="text-sm text-amber-800/80 mb-6 max-w-xl">
+          <p className="text-sm text-amber-800/80 mb-2 max-w-xl">
             Tu cuenta <span className="font-mono font-bold text-amber-900">{cuenta.noCuenta}</span> se encuentra inactiva.
-            Para empezar a operar, realiza tu depósito de activación inicial. El monto mínimo recomendado es de Q0.01.
           </p>
-          {activationError && (
-            <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg border border-rose-100 font-medium mb-4">
-              {activationError}
-            </div>
-          )}
-          {activationSuccess && (
-            <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded-lg border border-emerald-100 font-medium mb-4">
-              {activationSuccess}
-            </div>
-          )}
-          <form onSubmit={handleActivate} className="flex flex-col sm:flex-row gap-3 max-w-md">
-            <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium">Q</span>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={activationAmount}
-                onChange={(e) => setActivationAmount(e.target.value)}
-                placeholder="Monto depósito inicial"
-                disabled={activating}
-                required
-                className="w-full pl-8 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:border-amber-500 outline-none font-medium text-slate-800 disabled:opacity-50"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={activating}
-              className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-md shadow-amber-600/20 hover:shadow-lg disabled:opacity-50"
-            >
-              {activating ? 'Activando...' : 'Activar Cuenta'}
-            </button>
-          </form>
+          <p className="text-xs text-amber-700 font-semibold">
+            Por favor, contacta con un administrador en la agencia bancaria para realizar tu depósito de activación inicial (mínimo Q100.00).
+          </p>
         </div>
       )}
 
